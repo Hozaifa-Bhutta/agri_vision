@@ -1,0 +1,99 @@
+import mysql from 'mysql2/promise';
+
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || '34.122.161.108', // Use env var, default to localhost
+  user: process.env.DB_USER || 'root',      // Use env var, default to root
+  password: process.env.DB_PASSWORD || 'T)"X)j@4u_qPPISd', // Use env var, provide a strong default only for local dev
+  database: process.env.DB_NAME || 'agri_insights_db',  // Use env var, default to db-411
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306, // Use env var, default to 3306
+});
+
+export const connectDb = async () => {
+  try {
+    const connection = await pool.getConnection();
+    console.log('Connected to Google Cloud SQL MySQL!');
+    connection.release();
+    return connection; // Return the connection object for further use
+  } catch (err) {
+    console.error('Database connection error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+};
+
+export const query = async (sql: string, values: any[]): Promise<any[]> => {
+    try {
+      const connection = await pool.getConnection();
+      const [rows] = await connection.execute(sql, values);
+      connection.release();
+      return rows as any[];
+    } catch (err) {
+      console.error('Query error:', err);
+      throw err; // Re-throw the error to be handled upstream
+    }
+  };
+
+// method to check if user exists and if password is correct
+export const checkUser = async (username: string, password: string) => {
+  try {
+    const sql = 'SELECT * FROM UserAccount WHERE username = ? AND password = ?';
+    const values = [username, password];
+    const rows = await query(sql, values);
+    return rows.length > 0; // Return true if user exists, false otherwise
+
+    } catch (err) {
+        console.error('Check user error:', err);
+        throw err; // Re-throw the error to be handled upstream
+    }
+}
+
+export const createUser = async (username: string, password: string, county_state: string) => {
+  try {
+    // first check if user exists
+    if (await checkUser(username, password)) {
+      throw new Error('User already exists');
+    }
+    const sql = 'INSERT INTO UserAccount (username, password, county_state) VALUES (?, ?, ?)';
+    const values = [username, password, county_state];
+    const result = await query(sql, values);
+    return result; // Return the result of the insert operation
+  } catch (err) {
+    console.error('Create user error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+export const getCounties = async () => {
+  try {
+    const sql = 'SELECT * FROM Counties';
+    const rows = await query(sql, []);
+    console.log(rows);
+    return rows; // Return the result of the query
+  } catch (err) {
+    console.error('Get counties error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+export const getUserInfo = async (username: string) => {
+  try {
+    const sql = 'SELECT * FROM UserAccount WHERE username = ?';
+    const values = [username];
+    const rows = await query(sql, values);
+    return rows[0]; // Return the first row of the result
+  } catch (err) {
+    console.error('Get user info error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+export const updateUser = async (username: string, county_state: string) => {
+  try {
+    const sql = 'UPDATE UserAccount SET county_state = ? WHERE username = ?';
+    const values = [county_state, username];
+    const result = await query(sql, values);
+    return result; // Return the result of the update operation
+  } catch (err) {
+    console.error('Update user error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
