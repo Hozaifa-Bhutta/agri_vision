@@ -16,7 +16,7 @@ export default function LoginPage() {
     event.preventDefault();
 
     const loginData: LoginRequest = { username, password };
-
+    console.log("about to send login data:", loginData); // Log the login data
     try {
       const response: Response = await fetch('/api/login', {
         method: 'POST',
@@ -27,8 +27,12 @@ export default function LoginPage() {
       });
 
       if (response.ok) {
-        // Login successful, redirect to home page
-        router.push(`/home?username=${username}`); // Use router.push to navigate, passing username as a query parameter
+        // Login successful, redirect to signup page
+        console.log("Login successful, redirecting to signup page");
+        console.log("router before push:", router); // Check the router object
+        await router.push(`/home?username=${username}`);
+        console.log("router after push:", router); // Check the router object after push
+        console.log("Navigation completed");
       } else {
         // Login failed, display error message
         console.error('Login failed:', response.status);

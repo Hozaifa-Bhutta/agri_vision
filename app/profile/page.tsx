@@ -133,7 +133,11 @@ function ProfileContent() {
   }
 
   if (!userInfo) {
-    return <div>Loading user info...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-2xl font-semibold">Loading user info...</div>
+      </div>
+    );
   }
 
   return (
