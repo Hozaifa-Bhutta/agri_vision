@@ -17,6 +17,12 @@ function HomePageContent() {
     router.push(`/profile?username=${username}`);
   };
 
+  const handleLogout = () => {
+    // Perform any necessary cleanup (e.g., clearing cookies, local storage)
+    // Then redirect to the login page
+    router.push('/');
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <div className="bg-green-500 p-4 flex items-center justify-between">
@@ -29,6 +35,9 @@ function HomePageContent() {
         <div className="flex items-center space-x-2">
           <button onClick={goToProfile} className="text-white hover:text-gray-200">
             {username}
+          </button>
+          <button onClick={handleLogout} className="text-white hover:text-gray-200">
+            Logout
           </button>
         </div>
       </div>
