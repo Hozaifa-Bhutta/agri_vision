@@ -1,13 +1,14 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { StylesConfig } from 'react-select';
+import { useRouter } from 'next/navigation';
+import Select from 'react-select';
+import Link from 'next/link'; // Import the Link component
 
 // Define the County type
 interface County {
   county_state: string;
 }
-import { useRouter } from 'next/navigation';
-import Select from 'react-select';
 
 export default function SignupPage() {
   const [username, setUsername] = useState('');
@@ -25,10 +26,10 @@ export default function SignupPage() {
           const data = await response.json();
           console.log("Counties data:", data); // Inspect the data here
           // Format the counties data for react-select
-            const formattedCounties = data.map((county: County) => ({
+          const formattedCounties = data.map((county: County) => ({
             value: county.county_state,
             label: county.county_state
-            }));
+          }));
           setCounties(formattedCounties);
         } else {
           console.error('Failed to fetch counties:', response.status);
@@ -96,7 +97,6 @@ export default function SignupPage() {
   };
 
   // Custom styles to match the existing input fields
-
   const customStyles: StylesConfig<{ value: string; label: string }, false> = {
     control: (base, state) => ({
       ...base,
@@ -171,6 +171,14 @@ export default function SignupPage() {
             </button>
           </div>
         </form>
+        <div className="mt-4 text-center">
+          <Link
+            href="/"
+            className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
+          >
+            Already have an account? Log In
+          </Link>
+        </div>
       </div>
     </div>
   );
