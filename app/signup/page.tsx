@@ -1,12 +1,18 @@
 "use client";
 import { useState, useEffect } from 'react';
+import { StylesConfig } from 'react-select';
+
+// Define the County type
+interface County {
+  county_state: string;
+}
 import { useRouter } from 'next/navigation';
 import Select from 'react-select';
 
 export default function SignupPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [counties, setCounties] = useState([]);
+  const [counties, setCounties] = useState<{ value: string; label: string }[]>([]);
   const [selectedCounty, setSelectedCounty] = useState('');
   const [signupError, setSignupError] = useState(''); // State for signup error message
   const router = useRouter();
@@ -19,10 +25,10 @@ export default function SignupPage() {
           const data = await response.json();
           console.log("Counties data:", data); // Inspect the data here
           // Format the counties data for react-select
-          const formattedCounties = data.map(county => ({
+            const formattedCounties = data.map((county: County) => ({
             value: county.county_state,
             label: county.county_state
-          }));
+            }));
           setCounties(formattedCounties);
         } else {
           console.error('Failed to fetch counties:', response.status);
@@ -37,7 +43,7 @@ export default function SignupPage() {
     fetchCounties();
   }, []);
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     setSignupError(''); // Clear any previous error messages
 
@@ -46,20 +52,36 @@ export default function SignupPage() {
       return;
     }
 
+    interface SignupRequestBody {
+      username: string;
+      password: string;
+      county_state: string;
+    }
+
+    interface SignupErrorResponse {
+      message: string;
+    }
+
     try {
+      const requestBody: SignupRequestBody = {
+        username,
+        password,
+        county_state: selectedCounty,
+      };
+
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password, county_state: selectedCounty }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
         // Signup successful, redirect to login page
         router.push('/');
       } else {
-        const errorData = await response.json();
+        const errorData: SignupErrorResponse = await response.json();
         if (response.status === 400 && errorData.message === 'User already exists') {
           setSignupError('Username already exists. Please choose a different username.');
         } else {
@@ -74,21 +96,22 @@ export default function SignupPage() {
   };
 
   // Custom styles to match the existing input fields
-  const customStyles = {
-    control: (provided, state) => ({
-      ...provided,
+
+  const customStyles: StylesConfig<{ value: string; label: string }, false> = {
+    control: (base, state) => ({
+      ...base,
       boxShadow: state.isFocused ? '0 0 0 1px #4F46E5' : '0 0 0 1px #D1D5DB',
       borderColor: state.isFocused ? '#4F46E5' : '#D1D5DB',
       '&:hover': {
         borderColor: '#4F46E5',
       },
     }),
-    option: (provided) => ({
-      ...provided,
+    option: (base) => ({
+      ...base,
       color: 'black', // Set text color to black
     }),
-    singleValue: (provided) => ({
-      ...provided,
+    singleValue: (base) => ({
+      ...base,
       color: 'black', // Set text color to black
     }),
   };

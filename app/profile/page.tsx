@@ -1,17 +1,27 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Select from 'react-select'; // Import react-select
+import { StylesConfig } from 'react-select';
 
 export default function ProfilePage() {
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProfileContent />
+    </Suspense>
+  );
+}
+
+function ProfileContent() {
   const searchParams = useSearchParams();
   const username = searchParams.get('username') || 'User'; // Default to 'User' if no username is provided
   const [userInfo, setUserInfo] = useState<{ username: string; county_state: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
-  const [counties, setCounties] = useState([]); // State for counties
+  const [counties, setCounties] = useState<{ value: string; label: string }[]>([]); // State for counties
   const [selectedCounty, setSelectedCounty] = useState(''); // State for selected county
 
   const goBack = () => {
@@ -41,7 +51,11 @@ export default function ProfilePage() {
         if (response.ok) {
           const data = await response.json();
           // Format the counties data for react-select
-          const formattedCounties = data.map(county => ({
+          interface County {
+            county_state: string;
+          }
+
+          const formattedCounties = data.map((county: County) => ({
             value: county.county_state,
             label: county.county_state
           }));
@@ -94,21 +108,22 @@ export default function ProfilePage() {
   };
 
     // Custom styles to match the existing input fields
-    const customStyles = {
-      control: (provided, state) => ({
-        ...provided,
+
+    const customStyles: StylesConfig<{ value: string; label: string }, false> = {
+      control: (base, state) => ({
+        ...base,
         boxShadow: state.isFocused ? '0 0 0 1px #4F46E5' : '0 0 0 1px #D1D5DB',
         borderColor: state.isFocused ? '#4F46E5' : '#D1D5DB',
         '&:hover': {
           borderColor: '#4F46E5',
         },
       }),
-      option: (provided) => ({
-        ...provided,
+      option: (base) => ({
+        ...base,
         color: 'black', // Set text color to black
       }),
-      singleValue: (provided) => ({
-        ...provided,
+      singleValue: (base) => ({
+        ...base,
         color: 'black', // Set text color to black
       }),
     };

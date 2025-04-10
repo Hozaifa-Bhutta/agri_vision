@@ -7,16 +7,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const router = useRouter(); // Initialize useRouter
 
-  const handleSubmit = async (event) => {
+  interface LoginRequest {
+    username: string;
+    password: string;
+  }
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
 
+    const loginData: LoginRequest = { username, password };
+
     try {
-      const response = await fetch('/api/login', {
+      const response: Response = await fetch('/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(loginData),
       });
 
       if (response.ok) {
@@ -27,7 +34,7 @@ export default function LoginPage() {
         console.error('Login failed:', response.status);
         alert('Invalid credentials'); // Replace with a better error display
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       alert('An error occurred during login'); // Replace with a better error display
     }
