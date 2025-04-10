@@ -14,7 +14,7 @@ function HomePageContent() {
   }, [pathname]);
 
   const goToProfile = () => {
-    router.push(`/profile?username=${username}`);
+    router.push(`/profile?username=${username}`); 
   };
 
   const handleLogout = () => {
