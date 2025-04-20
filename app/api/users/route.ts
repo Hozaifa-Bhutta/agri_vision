@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserInfo, updateUser } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
+  // Called during "fetch"
   try {
     const searchParams = request.nextUrl.searchParams;
     const username = searchParams.get('username');
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) { // Or PATCH
+export async function POST(request: NextRequest) { 
   try {
     const { username, county_state } = await request.json();
 

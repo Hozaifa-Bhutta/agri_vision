@@ -1,29 +1,29 @@
 "use client";
 
-import React, { Suspense, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
-function HomePageContent() {
+export default function CountyDataPage() {
   const searchParams = useSearchParams();
   const username = searchParams.get('username') || 'User';
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    console.log('HomePage: Pathname changed:', pathname);
+    console.log('CountyDataPage: Pathname changed:', pathname);
   }, [pathname]);
 
   const goToProfile = () => {
-    router.push(`/profile?username=${username}`); 
+    router.push(`/profile?username=${username}`);
   };
 
   const handleLogout = () => {
-    // Perform any necessary cleanup, then redirect to the login page
     router.push('/');
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
+      {/* Navigation Menu */}
       <div className="bg-green-500 p-4 flex items-center justify-between">
         <div className="text-white font-bold text-xl">AgriVision</div>
         <div className="flex space-x-4">
@@ -39,7 +39,9 @@ function HomePageContent() {
           >
             Crop Yield
           </a>
-          <a href="/home" className="text-white hover:text-gray-200">Home</a>
+          <a href={`/home?username=${username}`} className="text-white hover:text-gray-200">
+            Home
+          </a>
         </div>
         <div className="flex items-center space-x-2">
           <button
@@ -56,20 +58,15 @@ function HomePageContent() {
           </button>
         </div>
       </div>
+      {/* Page Content */}
       <div className="flex items-center justify-center flex-grow">
-        <div className="bg-white p-8 rounded shadow-md">
-          <h1 className="text-2xl font-semibold mb-4" style={{ color: 'black' }}>Welcome Home!</h1>
-          <p className="text-gray-700">You have successfully logged in.</p>
+        <div className="bg-white p-8 rounded shadow-md w-full max-w-4xl">
+          <h1 className="text-2xl font-bold mb-4">County Data Page</h1>
+          <p className="text-gray-700">
+            Display county data here.
+          </p>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function HomePage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <HomePageContent />
-    </Suspense>
   );
 }
