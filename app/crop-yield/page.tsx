@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
-export default function CropYieldPage() {
+function CropYieldContent() {
   const searchParams = useSearchParams();
   const username = searchParams.get('username') || 'User';
   const router = useRouter();
@@ -39,21 +39,18 @@ export default function CropYieldPage() {
           >
             Crop Yield
           </a>
-          <a href={`/home?username=${username}`} className="text-white hover:text-gray-200">
+          <a
+            href={`/home?username=${username}`}
+            className="text-white hover:text-gray-200"
+          >
             Home
           </a>
         </div>
         <div className="flex items-center space-x-2">
-          <button
-            onClick={goToProfile}
-            className="text-white hover:text-gray-200"
-          >
+          <button onClick={goToProfile} className="text-white hover:text-gray-200">
             {username}
           </button>
-          <button
-            onClick={handleLogout}
-            className="text-white hover:text-gray-200"
-          >
+          <button onClick={handleLogout} className="text-white hover:text-gray-200">
             Logout
           </button>
         </div>
@@ -68,5 +65,13 @@ export default function CropYieldPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CropYieldPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CropYieldContent />
+    </Suspense>
   );
 }

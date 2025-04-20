@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useEffect } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import React, { Suspense, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
-export default function CountyDataPage() {
+function CountyDataContent() {
   const searchParams = useSearchParams();
-  const username = searchParams.get('username') || 'User';
+  const username = searchParams.get("username") || "User";
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    console.log('CountyDataPage: Pathname changed:', pathname);
+    console.log("CountyDataPage: Pathname changed:", pathname);
   }, [pathname]);
 
   const goToProfile = () => {
@@ -18,7 +18,7 @@ export default function CountyDataPage() {
   };
 
   const handleLogout = () => {
-    router.push('/');
+    router.push("/");
   };
 
   return (
@@ -39,21 +39,18 @@ export default function CountyDataPage() {
           >
             Crop Yield
           </a>
-          <a href={`/home?username=${username}`} className="text-white hover:text-gray-200">
+          <a
+            href={`/home?username=${username}`}
+            className="text-white hover:text-gray-200"
+          >
             Home
           </a>
         </div>
         <div className="flex items-center space-x-2">
-          <button
-            onClick={goToProfile}
-            className="text-white hover:text-gray-200"
-          >
+          <button onClick={goToProfile} className="text-white hover:text-gray-200">
             {username}
           </button>
-          <button
-            onClick={handleLogout}
-            className="text-white hover:text-gray-200"
-          >
+          <button onClick={handleLogout} className="text-white hover:text-gray-200">
             Logout
           </button>
         </div>
@@ -62,11 +59,17 @@ export default function CountyDataPage() {
       <div className="flex items-center justify-center flex-grow">
         <div className="bg-white p-8 rounded shadow-md w-full max-w-4xl">
           <h1 className="text-2xl font-bold mb-4">County Data Page</h1>
-          <p className="text-gray-700">
-            Display county data here.
-          </p>
+          <p className="text-gray-700">Display county data here.</p>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function CountyDataPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CountyDataContent />
+    </Suspense>
   );
 }
