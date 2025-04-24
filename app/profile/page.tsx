@@ -31,45 +31,48 @@ function ProfileContent() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const response = await fetch(`/api/users?username=${username}`);
+        const response = await fetch(`/api/GET?action=getUserInfo&username=${username}`);
         if (!response.ok) {
-            console.log("Response not ok:", response);
+          console.log("Response not ok:", response);
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        setUserInfo(data);
-        setSelectedCounty(data.county_state); // Initialize selected county
+        if (data.success && data.result) {
+          setUserInfo(data.result);
+          setSelectedCounty(data.result.county_state); // Initialize selected county
+        } else {
+          throw new Error(data.error || "Invalid user info response");
+        }
       } catch (e: any) {
         console.error("Could not fetch user info", e);
         setError(e.message || "Could not fetch user info");
       }
     };
-
+  
     const fetchCounties = async () => {
       try {
-        const response = await fetch('/api/counties');
-        if (response.ok) {
-          const data = await response.json();
+        const response = await fetch('/api/GET?action=getCounties');
+        if (!response.ok) {
+          console.error('Failed to fetch counties:', response.status);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success && Array.isArray(data.result)) {
           // Format the counties data for react-select
-          interface County {
-            county_state: string;
-          }
-
-          const formattedCounties = data.map((county: County) => ({
+          const formattedCounties = data.result.map((county: { county_state: string }) => ({
             value: county.county_state,
-            label: county.county_state
+            label: county.county_state,
           }));
           setCounties(formattedCounties);
         } else {
-          console.error('Failed to fetch counties:', response.status);
-          setError('Failed to fetch counties. Please try again.');
+          throw new Error(data.error || "Invalid counties response");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching counties:', error);
-        setError('An error occurred while fetching counties');
+        setError(error.message || 'An error occurred while fetching counties');
       }
     };
-
+  
     fetchUserInfo();
     fetchCounties();
   }, [username]);
@@ -80,12 +83,15 @@ function ProfileContent() {
 
   const handleSaveClick = async () => {
     try {
-      const response = await fetch('/api/users', { // Assuming you have an API endpoint for updating user info
+      const response = await fetch('/api/POST', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username: username, county_state: selectedCounty }),
+        body: JSON.stringify({
+          action: 'updateUser',
+          params: { username: username, county_state: selectedCounty },
+        }),
       });
 
       if (!response.ok) {
@@ -107,26 +113,25 @@ function ProfileContent() {
     setSelectedCounty(userInfo?.county_state || ''); // Reset selected county
   };
 
-    // Custom styles to match the existing input fields
-
-    const customStyles: StylesConfig<{ value: string; label: string }, false> = {
-      control: (base, state) => ({
-        ...base,
-        boxShadow: state.isFocused ? '0 0 0 1px #4F46E5' : '0 0 0 1px #D1D5DB',
-        borderColor: state.isFocused ? '#4F46E5' : '#D1D5DB',
-        '&:hover': {
-          borderColor: '#4F46E5',
-        },
-      }),
-      option: (base) => ({
-        ...base,
-        color: 'black', // Set text color to black
-      }),
-      singleValue: (base) => ({
-        ...base,
-        color: 'black', // Set text color to black
-      }),
-    };
+  // Custom styles to match the existing input fields
+  const customStyles: StylesConfig<{ value: string; label: string }, false> = {
+    control: (base, state) => ({
+      ...base,
+      boxShadow: state.isFocused ? '0 0 0 1px #4F46E5' : '0 0 0 1px #D1D5DB',
+      borderColor: state.isFocused ? '#4F46E5' : '#D1D5DB',
+      '&:hover': {
+        borderColor: '#4F46E5',
+      },
+    }),
+    option: (base) => ({
+      ...base,
+      color: 'black', // Set text color to black
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: 'black', // Set text color to black
+    }),
+  };
 
   if (error) {
     return <div>Error: {error}</div>;

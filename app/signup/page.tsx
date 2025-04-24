@@ -1,9 +1,12 @@
 "use client";
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic'; // Import dynamic for client-only components
 import { StylesConfig } from 'react-select';
 import { useRouter } from 'next/navigation';
-import Select from 'react-select';
 import Link from 'next/link'; // Import the Link component
+
+// Dynamically import react-select with SSR disabled
+const Select = dynamic(() => import('react-select'), { ssr: false });
 
 // Define the County type
 interface County {
@@ -21,23 +24,25 @@ export default function SignupPage() {
   useEffect(() => {
     const fetchCounties = async () => {
       try {
-        const response = await fetch('/api/counties');
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Counties data:", data); // Inspect the data here
+        const response = await fetch('/api/GET?action=getCounties'); // Updated to use GET with action
+        if (!response.ok) {
+          console.error('Failed to fetch counties:', response.status);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data.success && Array.isArray(data.result)) {
           // Format the counties data for react-select
-          const formattedCounties = data.map((county: County) => ({
+          const formattedCounties = data.result.map((county: County) => ({
             value: county.county_state,
-            label: county.county_state
+            label: county.county_state,
           }));
           setCounties(formattedCounties);
         } else {
-          console.error('Failed to fetch counties:', response.status);
-          alert('Failed to fetch counties. Please try again.');
+          throw new Error(data.error || 'Invalid counties response');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching counties:', error);
-        alert('An error occurred while fetching counties');
+        setSignupError('An error occurred while fetching counties.');
       }
     };
 
@@ -53,44 +58,35 @@ export default function SignupPage() {
       return;
     }
 
-    interface SignupRequestBody {
-      username: string;
-      password: string;
-      county_state: string;
-    }
-
-    interface SignupErrorResponse {
-      message: string;
-    }
-
     try {
-      const requestBody: SignupRequestBody = {
-        username,
-        password,
-        county_state: selectedCounty,
-      };
-
-      const response = await fetch('/api/signup', {
+      const response = await fetch('/api/POST', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          action: 'createUser', // Updated to use POST with action
+          params: {
+            username,
+            password,
+            county_state: selectedCounty,
+          },
+        }),
       });
 
       if (response.ok) {
         // Signup successful, redirect to login page
         router.push('/');
       } else {
-        const errorData: SignupErrorResponse = await response.json();
-        if (response.status === 400 && errorData.message === 'User already exists') {
+        const errorData = await response.json();
+        if (response.status === 400 && errorData.error === 'User already exists') {
           setSignupError('Username already exists. Please choose a different username.');
         } else {
           console.error('Signup failed:', response.status);
           setSignupError('Signup failed. Please try again.');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Signup error:', error);
       setSignupError('An error occurred during signup.');
     }

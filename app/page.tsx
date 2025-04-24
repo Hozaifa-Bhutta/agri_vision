@@ -7,40 +7,41 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const router = useRouter(); // Initialize useRouter
 
-  interface LoginRequest {
-    username: string;
-    password: string;
-  }
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
 
-    const loginData: LoginRequest = { username, password };
-    console.log("about to send login data:", loginData); // Log the login data
     try {
-      const response: Response = await fetch('/api/login', {
+      const response: Response = await fetch('/api/POST', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(loginData),
+        body: JSON.stringify({
+          action: 'checkUser', // Use the checkUser action
+          params: {
+            username,
+            password,
+          },
+        }),
       });
 
       if (response.ok) {
-        // Login successful, redirect to signup page
-        console.log("Login successful, redirecting to signup page");
-        console.log("router before push:", router); // Check the router object
-        await router.push(`/home?username=${username}`);
-        console.log("router after push:", router); // Check the router object after push
-        console.log("Navigation completed");
+        const data = await response.json();
+        if (data.success) {
+          // Login successful, redirect to home page
+          router.push(`/home?username=${username}`);
+        } else {
+          // Login failed, display error message
+          alert(data.error || 'Invalid credentials');
+        }
       } else {
-        // Login failed, display error message
-        console.error('Login failed:', response.status);
-        alert('Invalid credentials'); // Replace with a better error display
+        // Handle non-200 responses
+        const errorData = await response.json();
+        alert(errorData.error || 'Login failed. Please try again.');
       }
     } catch (error: unknown) {
       console.error('Login error:', error);
-      alert('An error occurred during login'); // Replace with a better error display
+      alert('An error occurred during login. Please try again.');
     }
   };
 
