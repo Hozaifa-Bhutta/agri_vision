@@ -10,6 +10,10 @@ export default function LoginPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
 
+    console.log('Login Form Submitted');
+    console.log('Username:', username);
+    console.log('Password:', password);
+
     try {
       const response: Response = await fetch('/api/POST', {
         method: 'POST',
@@ -25,18 +29,25 @@ export default function LoginPage() {
         }),
       });
 
+      console.log('Response received from API:', response);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('API Response Data:', data);
+
         if (data.success) {
           // Login successful, redirect to home page
+          console.log('Login successful, redirecting to home...');
           router.push(`/home?username=${username}`);
         } else {
           // Login failed, display error message
+          console.log('Login failed:', data.error);
           alert(data.error || 'Invalid credentials');
         }
       } else {
         // Handle non-200 responses
         const errorData = await response.json();
+        console.log('Error in response:', errorData);
         alert(errorData.error || 'Login failed. Please try again.');
       }
     } catch (error: unknown) {

@@ -3,7 +3,7 @@ import {
   getCounties,
   getUserInfo,
 } from '@/lib/db';
-
+import { fetchWeatherLast7Days } from '@/lib/weather';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -22,6 +22,14 @@ export async function GET(req: NextRequest) {
         }
         const result = await getUserInfo(username);
         return NextResponse.json({ success: true, result });
+      }
+      case 'getCurrentWeather': {
+        const countyState = searchParams.get('countyState');
+        if (!countyState) {
+          return NextResponse.json({ success: false, error: 'County and state are required' }, { status: 400 });
+        }
+        const weatherData = await fetchWeatherLast7Days(countyState);
+        return NextResponse.json({ success: true, result: weatherData });
       }
 
       default:
