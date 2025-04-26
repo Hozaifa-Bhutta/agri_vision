@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
         if (!crop_type || !measurement_date || !yieldacre || !username || !county_state) {
           return NextResponse.json({ success: false, error: 'All fields must be filled.' }, { status: 400 });
         }
-        const result = await createYield({crop_type: crop_type, measurement_date, yieldacre, username, county_state});
+        const result = await createYield({crop_type, measurement_date, yieldacre, username, county_state});
         if (!result) {
           return NextResponse.json({ success: false, error: 'Failed to create yield' }, { status: 500 });
         }
