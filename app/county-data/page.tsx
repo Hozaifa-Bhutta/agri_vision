@@ -119,7 +119,7 @@ function CountyDataContent() {
       {/* Page Content */}
       <div className="flex flex-grow w-full h-full">
         {/* Left County Card */}
-        <div className="flex flex-col justify-start items-start flex-1 bg-white p-8 m-4 rounded shadow-md">
+        <div className="flex flex-col justify-start items-start flex-1 bg-white p-8 m-4 rounded shadow-md text-black opacity-100">
           <h2 className="text-2xl font-bold mb-4">
             {county ? county : "County 1 Data"}
           </h2>
@@ -127,24 +127,24 @@ function CountyDataContent() {
           {/* Soil Data Table */}
           <h3 className="text-lg font-semibold mt-8 mb-2">Soil Data</h3>
           <div className="overflow-x-auto w-full">
-            <table className="table-auto w-full text-sm border">
-              <thead>
+            <table className="table-auto w-full text-sm border text-black">
+              <thead className="bg-gray-200 text-black opacity-100">
                 <tr className="bg-gray-200">
-                  <th className="border p-2">Soil Org Carbon Stock</th>
-                  <th className="border p-2">Bulk Density</th>
-                  <th className="border p-2">Nitrogen</th>
-                  <th className="border p-2">Soil Org Carbon</th>
-                  <th className="border p-2">pH Water</th>
+                  <th className="border p-2 text-black">Soil Org Carbon Stock</th>
+                  <th className="border p-2 text-black">Bulk Density</th>
+                  <th className="border p-2 text-black">Nitrogen</th>
+                  <th className="border p-2 text-black">Soil Org Carbon</th>
+                  <th className="border p-2 text-black">pH Water</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="text-black opacity-100">
                 {userSoilData.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-100">
-                    <td className="border p-2">{item.soil_org_carbon_stock}</td>
-                    <td className="border p-2">{item.bulk_density}</td>
-                    <td className="border p-2">{item.nitrogen}</td>
-                    <td className="border p-2">{item.soil_org_carbon}</td>
-                    <td className="border p-2">{item.pH_water}</td>
+                    <td className="border p-2 text-black">{item.soil_org_carbon_stock}</td>
+                    <td className="border p-2 text-black">{item.bulk_density}</td>
+                    <td className="border p-2 text-black">{item.nitrogen}</td>
+                    <td className="border p-2 text-black">{item.soil_org_carbon}</td>
+                    <td className="border p-2 text-black">{item.pH_water}</td>
                   </tr>
                 ))}
               </tbody>
@@ -153,7 +153,7 @@ function CountyDataContent() {
         </div>
 
         {/* Right County Card */}
-        <div className="flex flex-col justify-start items-start flex-1 bg-white p-8 m-4 rounded shadow-md">
+        <div className="flex flex-col justify-start items-start flex-1 bg-white p-8 m-4 rounded shadow-md text-black opacity-100">
           <h2 className="text-2xl font-bold mb-4">
             {selectedCounty ? selectedCounty : "County 2 Data"}
           </h2>
@@ -183,24 +183,24 @@ function CountyDataContent() {
           {/* Soil Data Table */}
           <h3 className="text-lg font-semibold mt-8 mb-2">Soil Data</h3>
           <div className="overflow-x-auto w-full">
-            <table className="table-auto w-full text-sm border">
+            <table className="table-auto w-full text-sm border text-black">
               <thead>
                 <tr className="bg-gray-200">
-                  <th className="border p-2">Soil Org Carbon Stock</th>
-                  <th className="border p-2">Bulk Density</th>
-                  <th className="border p-2">Nitrogen</th>
-                  <th className="border p-2">Soil Org Carbon</th>
-                  <th className="border p-2">pH Water</th>
+                  <th className="border p-2 text-black">Soil Org Carbon Stock</th>
+                  <th className="border p-2 text-black">Bulk Density</th>
+                  <th className="border p-2 text-black">Nitrogen</th>
+                  <th className="border p-2 text-black">Soil Org Carbon</th>
+                  <th className="border p-2 text-black">pH Water</th>
                 </tr>
               </thead>
               <tbody>
                 {selectedSoilData.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-100">
-                    <td className="border p-2">{item.soil_org_carbon_stock}</td>
-                    <td className="border p-2">{item.bulk_density}</td>
-                    <td className="border p-2">{item.nitrogen}</td>
-                    <td className="border p-2">{item.soil_org_carbon}</td>
-                    <td className="border p-2">{item.pH_water}</td>
+                    <td className="border p-2 text-black">{item.soil_org_carbon_stock}</td>
+                    <td className="border p-2 text-black">{item.bulk_density}</td>
+                    <td className="border p-2 text-black">{item.nitrogen}</td>
+                    <td className="border p-2 text-black">{item.soil_org_carbon}</td>
+                    <td className="border p-2 text-black">{item.pH_water}</td>
                   </tr>
                 ))}
               </tbody>
