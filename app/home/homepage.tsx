@@ -35,10 +35,11 @@ function HomePageContent() {
     const fetchUserInfo = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/users?username=${username}`);
+        const response = await fetch(`/api/GET?action=getUserInfo&username=${username}`);
         
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()).result;
+          console.log("Fetched user info:", data);
           setUserInfo(data);
         } else {
           console.error('Failed to fetch user info:', response.status);
