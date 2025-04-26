@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getCounties,
   getUserInfo,
-  getYieldsByUsername
+  getYieldsByUsername,
+  getAuditLogs
 } from '@/lib/db';
 import { fetchWeatherLast7Days } from '@/lib/weather';
+import {fetchFarmingNews} from '@/lib/farmingNews';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -39,6 +41,24 @@ export async function GET(req: NextRequest) {
         }
         const result = await getYieldsByUsername(username);
         return NextResponse.json({ success: true, result });
+      }
+      
+      case 'getAuditLogs': {
+        const username = searchParams.get('username');
+        const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : 10;
+        if (!username) {
+          return NextResponse.json({ message: 'Missing username' }, { status: 400 });
+        }
+        const auditLogs = await getAuditLogs(username, limit);
+        return NextResponse.json({ success: true, result: auditLogs });
+      }
+      case 'getFarmingNews': {
+        const countyState = searchParams.get('countyState');
+        if (!countyState) {
+          return NextResponse.json({ success: false, error: 'County and state are required' }, { status: 400 });
+        }
+        const newsData = await fetchFarmingNews(countyState);
+        return NextResponse.json({ success: true, result: newsData });
       }
 
       default:

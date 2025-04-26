@@ -142,6 +142,27 @@ export const createYield = async (yieldData: {
   }
 }
 
+
+export const getAuditLogs = async (username: string, limit: number) => {
+  try {
+    // Sanitize the limit value to prevent SQL injection
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 10, 1000));
+    
+    // Use string concatenation for the LIMIT value
+    const sql = `SELECT * FROM CropYield_AuditLog WHERE username = ? ORDER BY action_timestamp DESC LIMIT ${safeLimit}`;
+    console.log('SQL:', sql);
+    const values = [username]; // Only username uses placeholder
+    
+    const rows = await query(sql, values);
+    return rows;
+  }
+  catch (err) {
+    console.error('Get audit logs error:', err);
+    throw err;
+  }
+}
+
+
 export const deleteYieldById = async (
   compositeId: { 
     cropType: string, 

@@ -39,7 +39,6 @@ function HomePageContent() {
         
         if (response.ok) {
           const data = (await response.json()).result;
-          console.log("Fetched user info:", data);
           setUserInfo(data);
         } else {
           console.error('Failed to fetch user info:', response.status);
@@ -60,10 +59,10 @@ function HomePageContent() {
     const fetchAuditLogs = async () => {
       try {
         setLogsLoading(true);
-        const response = await fetch(`/api/audit-logs?username=${username}&limit=5`);
+        const response = await fetch(`/api/GET?action=getAuditLogs&username=${username}&limit=10`);
         
         if (response.ok) {
-          const data = await response.json();
+          const data = (await response.json()).result;
           setAuditLogs(data);
         } else {
           console.error('Failed to fetch audit logs:', response.status);
