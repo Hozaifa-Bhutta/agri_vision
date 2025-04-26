@@ -5,7 +5,8 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 interface YieldRecord {
-  id: number;
+  username: string;
+  county: string;
   cropType: string;
   measurementDate: string;
   yieldPerAcre: number;
@@ -17,6 +18,7 @@ function CropYieldContent() {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [county, setCounty] = useState<string>(''); // <-- ADD state for county
   const [yields, setYields] = useState<YieldRecord[]>([]);
   const [newYield, setNewYield] = useState({
     cropType: '',
@@ -30,8 +32,26 @@ function CropYieldContent() {
     console.log('CropYieldPage: Pathname changed:', pathname);
   }, [pathname]);
 
+  // NEW: Fetch user info to get county
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const res = await fetch(`/api/users?username=${username}`);
+        if (!res.ok) throw new Error('Failed to fetch user info');
+        const data = await res.json();
+        console.log("Fetched user county:", data.county_state);
+        setCounty(data.county_state); // <-- Set county
+      } catch (e: any) {
+        console.error(e.message);
+        setError('Could not fetch user info');
+      }
+    };
+
+    fetchUserInfo();
+  }, [username]);
+
   const fetchYields = async () => {
-    const res = await fetch(`/api/cropyields/?username=${username}`);
+    const res = await fetch(`/api/cropyields?${new URLSearchParams({ username }).toString()}`);
     const data: YieldRecord[] = await res.json();
     setYields(data);
   };
@@ -53,7 +73,6 @@ function CropYieldContent() {
     setError(null);
     setMessage(null);
 
-    // Basic validation
     if (!newYield.cropType || !newYield.measurementDate || !newYield.yieldPerAcre) {
       setError("All fields must be filled.");
       return;
@@ -67,7 +86,11 @@ function CropYieldContent() {
       const res = await fetch('/api/cropyields', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newYield, username })
+        body: JSON.stringify({
+          ...newYield,
+          username,
+          county // <-- Use dynamically fetched county
+        })
       });
 
       const result = await res.json();
@@ -103,9 +126,7 @@ function CropYieldContent() {
       <div className="flex items-center justify-center flex-grow">
         <div className="bg-white p-8 rounded shadow-md w-full max-w-4xl text-black">
           <h1 className="text-2xl font-bold mb-4">Crop Yield Page</h1>
-          <p className="mb-6">
-            Display crop yield statistics and details here. Hozaifa I appreciate everything you do.
-          </p>
+          <p className="mb-6">County: <strong>{county}</strong></p>
 
           {/* Add New Yield Form */}
           <h2 className="text-xl font-semibold mb-2">Add New Yield</h2>
@@ -131,7 +152,7 @@ function CropYieldContent() {
                 <th className="border p-2">Crop</th>
                 <th className="border p-2">Date</th>
                 <th className="border p-2">Yield</th>
-                <th className="border p-2">Actions</th>
+                <th className="border p-2">County</th>
               </tr>
             </thead>
             <tbody>
@@ -140,13 +161,7 @@ function CropYieldContent() {
                   <td className="border p-2 text-black">{item.cropType}</td>
                   <td className="border p-2 text-black">{item.measurementDate}</td>
                   <td className="border p-2 text-black">{item.yieldPerAcre}</td>
-                  <td className="border p-2 text-black">
-                    <button className="text-blue-500 mr-2">Edit</button>
-                    <button className="text-red-500" onClick={async () => {
-                      await fetch(`/api/cropyields/${item.id}`, { method: 'DELETE' });
-                      setYields(yields.filter((y) => y.id !== item.id));
-                    }}>Delete</button>
-                  </td>
+                  <td className="border p-2 text-black">{item.county}</td>
                 </tr>
               ))}
             </tbody>
