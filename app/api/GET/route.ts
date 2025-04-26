@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   getCounties,
   getUserInfo,
+  getYieldsByUsername
 } from '@/lib/db';
 import { fetchWeatherLast7Days } from '@/lib/weather';
 export async function GET(req: NextRequest) {
@@ -30,6 +31,14 @@ export async function GET(req: NextRequest) {
         }
         const weatherData = await fetchWeatherLast7Days(countyState);
         return NextResponse.json({ success: true, result: weatherData });
+      }
+      case 'getYields' : {
+        const username = searchParams.get('username');
+        if (!username) {
+          return NextResponse.json({ success: false, error: 'Username is required' }, { status: 400 });
+        }
+        const result = await getYieldsByUsername(username);
+        return NextResponse.json({ success: true, result });
       }
 
       default:

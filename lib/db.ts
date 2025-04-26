@@ -97,3 +97,72 @@ export const updateUser = async (username: string, county_state: string) => {
     throw err; // Re-throw the error to be handled upstream
   }
 }
+
+
+// ...existing code...
+
+export const getYieldsByUsername = async (username: string) => {
+  try {
+    const sql = 'SELECT * FROM CropYield WHERE username = ?';
+    const values = [username];
+    const rows = await query(sql, values);
+    return rows; // Return all yield records for this user
+  } catch (err) {
+    console.error('Get yields error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+export const createYield = async (yieldData: { 
+  crop_type: string, 
+  measurement_date: string, 
+  yieldacre: number, 
+  username: string ,
+  county_state: string
+}) => {
+  try {
+
+    const sql = 'INSERT INTO CropYield (crop_type, measurement_date, county_state, username, yieldacre) VALUES (?, ?, ?, ?, ?)';
+    const values = [
+      yieldData.crop_type,
+      yieldData.measurement_date,
+      yieldData.county_state,
+      yieldData.username,
+      yieldData.yieldacre
+    ];
+    console.log('SQL:', sql);
+    console.log('Values:', values);
+    const result = await query(sql, values);
+    return {
+      ...yieldData,
+    }; // Return the newly created record
+  } catch (err) {
+    console.error('Create yield error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+export const deleteYieldById = async (
+  compositeId: { 
+    cropType: string, 
+    measurementDate: string, 
+    username: string, 
+    county_state: string 
+  }
+) => {
+  try {
+    const sql = 'DELETE FROM CropYield WHERE crop_type = ? AND measurement_date = ? AND username = ? AND county_state = ?';
+    const values = [
+      compositeId.cropType,
+      compositeId.measurementDate,
+      compositeId.username,
+      compositeId.county_state
+    ];
+    
+    const result = await query(sql, values);
+    return result; // Return the result of the delete operation
+  } catch (err) {
+    console.error('Delete yield error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
