@@ -1,176 +1,202 @@
-"use client";
+'use client';
 import { useState, useEffect } from 'react';
-import { StylesConfig } from 'react-select';
+import dynamic from 'next/dynamic';
+import type {
+  Props as SelectProps,
+  StylesConfig,
+  GroupBase
+} from 'react-select';
 import { useRouter } from 'next/navigation';
-import Select from 'react-select';
-import Link from 'next/link'; // Import the Link component
+import Link from 'next/link';
 
-// Define the County type
+// Define the shape of your API’s county objects
 interface County {
   county_state: string;
 }
 
+// Define the option shape for react-select
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+// Dynamically import react-select and give it the exact same generics
+const Select = dynamic(
+  () => import('react-select'),
+  { ssr: false }
+) as React.ComponentType<
+  SelectProps<SelectOption, false, GroupBase<SelectOption>>
+>;
+
 export default function SignupPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [counties, setCounties] = useState<{ value: string; label: string }[]>([]);
+  const [counties, setCounties] = useState<SelectOption[]>([]);
   const [selectedCounty, setSelectedCounty] = useState('');
-  const [signupError, setSignupError] = useState(''); // State for signup error message
+  const [signupError, setSignupError] = useState('');
   const router = useRouter();
 
   useEffect(() => {
     const fetchCounties = async () => {
       try {
-        const response = await fetch('/api/counties');
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Counties data:", data); // Inspect the data here
-          // Format the counties data for react-select
-          const formattedCounties = data.map((county: County) => ({
-            value: county.county_state,
-            label: county.county_state
-          }));
-          setCounties(formattedCounties);
-        } else {
+        const response = await fetch('/api/GET?action=getCounties');
+        if (!response.ok) {
           console.error('Failed to fetch counties:', response.status);
-          alert('Failed to fetch counties. Please try again.');
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      } catch (error) {
-        console.error('Error fetching counties:', error);
-        alert('An error occurred while fetching counties');
+        const data = await response.json();
+        if (data.success && Array.isArray(data.result)) {
+          const formatted: SelectOption[] = data.result.map((c: County) => ({
+            value: c.county_state,
+            label: c.county_state,
+          }));
+          setCounties(formatted);
+        } else {
+          throw new Error(data.error || 'Invalid counties response');
+        }
+      } catch (err: any) {
+        console.error('Error fetching counties:', err);
+        setSignupError('An error occurred while fetching counties.');
       }
     };
-
     fetchCounties();
   }, []);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    event.preventDefault();
-    setSignupError(''); // Clear any previous error messages
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupError('');
 
     if (!username || !password || !selectedCounty) {
       setSignupError('Please fill in all fields.');
       return;
     }
 
-    interface SignupRequestBody {
-      username: string;
-      password: string;
-      county_state: string;
-    }
-
-    interface SignupErrorResponse {
-      message: string;
-    }
-
     try {
-      const requestBody: SignupRequestBody = {
-        username,
-        password,
-        county_state: selectedCounty,
-      };
-
-      const response = await fetch('/api/signup', {
+      const res = await fetch('/api/POST', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'createUser',
+          params: { username, password, county_state: selectedCounty },
+        }),
       });
 
-      if (response.ok) {
-        // Signup successful, redirect to login page
+      if (res.ok) {
         router.push('/');
       } else {
-        const errorData: SignupErrorResponse = await response.json();
-        if (response.status === 400 && errorData.message === 'User already exists') {
-          setSignupError('Username already exists. Please choose a different username.');
+        const errData = await res.json();
+        if (res.status === 400 && errData.error === 'User already exists') {
+          setSignupError('Username already exists. Please choose a different one.');
         } else {
-          console.error('Signup failed:', response.status);
+          console.error('Signup failed:', res.status, errData);
           setSignupError('Signup failed. Please try again.');
         }
       }
-    } catch (error) {
-      console.error('Signup error:', error);
+    } catch (err: any) {
+      console.error('Signup error:', err);
       setSignupError('An error occurred during signup.');
     }
   };
 
-  // Custom styles to match the existing input fields
-  const customStyles: StylesConfig<{ value: string; label: string }, false> = {
+  const customStyles: StylesConfig<
+    SelectOption,
+    false,
+    GroupBase<SelectOption>
+  > = {
     control: (base, state) => ({
       ...base,
-      boxShadow: state.isFocused ? '0 0 0 1px #4F46E5' : '0 0 0 1px #D1D5DB',
+      boxShadow: state.isFocused
+        ? '0 0 0 1px #4F46E5'
+        : '0 0 0 1px #D1D5DB',
       borderColor: state.isFocused ? '#4F46E5' : '#D1D5DB',
-      '&:hover': {
-        borderColor: '#4F46E5',
-      },
+      '&:hover': { borderColor: '#4F46E5' },
     }),
     option: (base) => ({
       ...base,
-      color: 'black', // Set text color to black
+      color: 'black',
     }),
     singleValue: (base) => ({
       ...base,
-      color: 'black', // Set text color to black
+      color: 'black',
     }),
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded shadow-md w-96">
-        <h2 className="text-2xl font-semibold mb-4" style={{ color: 'black' }}>Sign Up</h2>
+        <h2 className="text-2xl font-semibold mb-4" style={{ color: 'black' }}>
+          Sign Up
+        </h2>
+
         {signupError && (
-          <div className="text-red-500 mb-4">
-            {signupError}
-          </div>
+          <div className="text-red-500 mb-4">{signupError}</div>
         )}
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="username"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
               Username:
             </label>
             <input
-              type="text"
               id="username"
+              type="text"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline border-gray-300"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
           </div>
+
           <div className="mb-6">
-            <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="password"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
               Password:
             </label>
             <input
-              type="password"
               id="password"
+              type="password"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline border-gray-300"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {/* County selection */}
+
           <div className="mb-6">
-            <label htmlFor="county" className="block text-gray-700 text-sm font-bold mb-2">
+            <label
+              htmlFor="county"
+              className="block text-gray-700 text-sm font-bold mb-2"
+            >
               County:
             </label>
             <Select
               id="county"
               options={counties}
-              value={counties.find(option => option.value === selectedCounty)}
-              onChange={(selectedOption) => setSelectedCounty(selectedOption ? selectedOption.value : '')}
+              value={
+                counties.find((o) => o.value === selectedCounty) || null
+              }
+              onChange={(opt) =>
+                setSelectedCounty(opt ? opt.value : '')
+              }
               isSearchable
               placeholder="Select a county"
               styles={customStyles}
             />
           </div>
+
           <div className="flex items-center justify-between">
-            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
               Sign Up
             </button>
           </div>
         </form>
+
         <div className="mt-4 text-center">
           <Link
             href="/"
