@@ -280,6 +280,7 @@ export const cropAdvancedQuery = async (username: string) => {
   try {
     const sql = `SELECT 
           CY.username,
+          CY.county_state,
           AVG(CY.yieldacre) AS avg_yield,
           AR.avg_precipitation
       FROM 
@@ -296,7 +297,7 @@ export const cropAdvancedQuery = async (username: string) => {
       WHERE 
           CY.username = ?
       GROUP BY 
-          CY.username, AR.avg_precipitation;`;
+          CY.username, CY.county_state, AR.avg_precipitation;`;
     const values = [username];
     const rows = await query(sql, values);
     console.log('Advanced query result:', rows);
