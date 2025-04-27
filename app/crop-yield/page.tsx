@@ -6,10 +6,10 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 
 interface YieldRecord {
   username: string;
-  county: string;
-  cropType: string;
-  measurementDate: string;
-  yieldPerAcre: number;
+  county_state: string;
+  crop_type: string;
+  measurement_date: string;
+  yieldacre: number;
 }
 
 function CropYieldContent() {
@@ -18,41 +18,38 @@ function CropYieldContent() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [county, setCounty] = useState<string>(''); // <-- ADD state for county
+  const [county, setCounty] = useState<string>('');
   const [yields, setYields] = useState<YieldRecord[]>([]);
   const [newYield, setNewYield] = useState({
-    cropType: '',
-    measurementDate: '',
-    yieldPerAcre: ''
+    crop_type: '',
+    measurement_date: '',
+    yieldacre: ''
   });
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    console.log('CropYieldPage: Pathname changed:', pathname);
-  }, [pathname]);
+    setIsMounted(true);
+  }, []);
 
-  // NEW: Fetch user info to get county
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const res = await fetch(`/api/users?username=${username}`);
+        const res = await fetch(`/api/GET?action=getUserInfo&username=${username}`);
         if (!res.ok) throw new Error('Failed to fetch user info');
-        const data = await res.json();
-        console.log("Fetched user county:", data.county_state);
-        setCounty(data.county_state); // <-- Set county
+        const data = (await res.json()).result;
+        setCounty(data.county_state);
       } catch (e: any) {
-        console.error(e.message);
         setError('Could not fetch user info');
       }
     };
-
     fetchUserInfo();
   }, [username]);
 
   const fetchYields = async () => {
-    const res = await fetch(`/api/cropyields?${new URLSearchParams({ username }).toString()}`);
-    const data: YieldRecord[] = await res.json();
+    const res = await fetch(`/api/GET?action=getYields&username=${username}`);
+    const data: YieldRecord[] = (await res.json()).result;
     setYields(data);
   };
 
@@ -68,37 +65,109 @@ function CropYieldContent() {
     router.push('/');
   };
 
+  const handleEdit = async (item: YieldRecord) => {
+    const newYieldAmount = prompt(`Enter new yield amount for ${item.crop_type} (${item.measurement_date}):`, item.yieldacre.toString());
+
+    if (newYieldAmount === null) {
+      return;
+    }
+
+    if (isNaN(Number(newYieldAmount)) || Number(newYieldAmount) <= 0) {
+      alert("Please enter a valid positive number.");
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/POST', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'editYield',
+          params: {
+            username: item.username,
+            county_state: item.county_state,
+            crop_type: item.crop_type,
+            measurement_date: item.measurement_date,
+            yieldacre: Number(newYieldAmount),
+          },
+        }),
+      });
+
+      if (res.ok) {
+        setMessage("Yield updated successfully!");
+        fetchYields();
+      } else {
+        const result = (await res.json()).result;
+        setError(result.error || "Something went wrong while editing.");
+      }
+    } catch (err: any) {
+      setError("An unexpected error occurred while editing.");
+    }
+  };
+
+  const handleDelete = async (item: YieldRecord) => {
+    try {
+      const res = await fetch('/api/POST', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'deleteYield',
+          params: {
+            username,
+            crop_type: item.crop_type,
+            measurement_date: item.measurement_date,
+            county_state: item.county_state,
+          },
+        }),
+      });
+      if (res.ok) {
+        setMessage("Yield deleted successfully!");
+        fetchYields();
+      } else {
+        const result = (await res.json()).result;
+        setError(result.error || "Something went wrong while deleting.");
+      }
+    } catch (err: any) {
+      setError("An unexpected error occurred while deleting.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setMessage(null);
 
-    if (!newYield.cropType || !newYield.measurementDate || !newYield.yieldPerAcre) {
+    if (!newYield.crop_type || !newYield.measurement_date || !newYield.yieldacre) {
       setError("All fields must be filled.");
       return;
     }
-    if (isNaN(Number(newYield.yieldPerAcre)) || Number(newYield.yieldPerAcre) <= 0) {
+    if (isNaN(Number(newYield.yieldacre)) || Number(newYield.yieldacre) <= 0) {
       setError("Yield must be a positive number.");
       return;
     }
 
     try {
-      const res = await fetch('/api/cropyields', {
+      const res = await fetch('/api/POST', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...newYield,
-          username,
-          county // <-- Use dynamically fetched county
-        })
+          action: 'createYield',
+          params: {
+            username,
+            county_state: county,
+            crop_type: newYield.crop_type,
+            measurement_date: newYield.measurement_date,
+            yieldacre: Number(newYield.yieldacre),
+          },
+        }),
       });
 
-      const result = await res.json();
       if (res.ok) {
         setMessage("Yield saved successfully!");
-        setNewYield({ cropType: '', measurementDate: '', yieldPerAcre: '' });
+        setNewYield({ crop_type: '', measurement_date: '', yieldacre: '' });
         fetchYields();
       } else {
+        const result = await res.json();
         setError(result.error || "Something went wrong.");
       }
     } catch (err: any) {
@@ -108,7 +177,6 @@ function CropYieldContent() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 text-black">
-      {/* Navigation */}
       <div className="bg-green-500 p-4 flex items-center justify-between">
         <div className="text-white font-bold text-xl">AgriVision</div>
         <div className="flex space-x-4">
@@ -122,29 +190,50 @@ function CropYieldContent() {
         </div>
       </div>
 
-      {/* Page Content */}
       <div className="flex items-center justify-center flex-grow">
         <div className="bg-white p-8 rounded shadow-md w-full max-w-4xl text-black">
           <h1 className="text-2xl font-bold mb-4">Crop Yield Page</h1>
           <p className="mb-6">County: <strong>{county}</strong></p>
 
-          {/* Add New Yield Form */}
           <h2 className="text-xl font-semibold mb-2">Add New Yield</h2>
 
           {message && <div className="mb-2 text-green-600 font-semibold">{message}</div>}
           {error && <div className="mb-2 text-red-600 font-semibold">{error}</div>}
 
           <form onSubmit={handleSubmit} className="grid grid-cols-3 gap-4 mb-6">
-            <input type="text" placeholder="Crop Type" required className="border p-2 text-black"
-              value={newYield.cropType} onChange={(e) => setNewYield({ ...newYield, cropType: e.target.value })} />
-            <input type="month" required className="border p-2 text-black"
-              value={newYield.measurementDate} onChange={(e) => setNewYield({ ...newYield, measurementDate: e.target.value })} />
-            <input type="number" placeholder="Yield per Acre" required className="border p-2 text-black"
-              value={newYield.yieldPerAcre} onChange={(e) => setNewYield({ ...newYield, yieldPerAcre: e.target.value })} />
-            <button type="submit" className="col-span-3 bg-blue-500 text-white px-4 py-2 rounded">Save Yield</button>
+            <select
+              required
+              className="border p-2 text-black"
+              value={newYield.crop_type}
+              onChange={(e) => setNewYield({ ...newYield, crop_type: e.target.value })}
+            >
+              <option value="" disabled>Select Crop</option>
+              <option value="corn">Corn</option>
+              <option value="soybeans">Soybeans</option>
+            </select>
+
+            <input
+              type="month"
+              required
+              className="border p-2 text-black"
+              value={newYield.measurement_date}
+              onChange={(e) => setNewYield({ ...newYield, measurement_date: e.target.value })}
+            />
+
+            <input
+              type="number"
+              placeholder="Yield per Acre"
+              required
+              className="border p-2 text-black"
+              value={newYield.yieldacre}
+              onChange={(e) => setNewYield({ ...newYield, yieldacre: e.target.value })}
+            />
+
+            <button type="submit" className="col-span-3 bg-blue-500 text-white px-4 py-2 rounded">
+              Save Yield
+            </button>
           </form>
 
-          {/* Yield Table */}
           <h2 className="text-xl font-semibold mb-2">Yield History</h2>
           <table className="w-full text-left border-collapse border border-gray-300 mb-6">
             <thead className="bg-gray-200">
@@ -153,29 +242,49 @@ function CropYieldContent() {
                 <th className="border p-2">Date</th>
                 <th className="border p-2">Yield</th>
                 <th className="border p-2">County</th>
+                <th className="border p-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {yields.map((item, index) => (
                 <tr key={index}>
-                  <td className="border p-2 text-black">{item.cropType}</td>
-                  <td className="border p-2 text-black">{item.measurementDate}</td>
-                  <td className="border p-2 text-black">{item.yieldPerAcre}</td>
-                  <td className="border p-2 text-black">{item.county}</td>
+                  <td className="border p-2 text-black">{item.crop_type}</td>
+                  <td className="border p-2 text-black">{item.measurement_date}</td>
+                  <td className="border p-2 text-black">{item.yieldacre}</td>
+                  <td className="border p-2 text-black">{item.county_state}</td>
+                  <td className="border p-2 flex space-x-2">
+                    <button
+                      className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-1 px-2 rounded"
+                      onClick={() => handleEdit(item)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded"
+                      onClick={() => handleDelete(item)}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {/* Chart */}
           <h2 className="text-xl font-semibold mb-2">Yield Over Time</h2>
-          <LineChart width={600} height={300} data={yields}>
-            <CartesianGrid stroke="#ccc" />
-            <XAxis dataKey="measurementDate" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="yieldPerAcre" stroke="#8884d8" />
-          </LineChart>
+          {isMounted ? (
+            <LineChart width={600} height={300} data={yields}>
+              <CartesianGrid stroke="#ccc" />
+              <XAxis dataKey="measurement_date" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="yieldacre" stroke="#8884d8" />
+            </LineChart>
+          ) : (
+            <div className="w-[600px] h-[300px] bg-gray-100 flex items-center justify-center">
+              Loading chart...
+            </div>
+          )}
         </div>
       </div>
     </div>

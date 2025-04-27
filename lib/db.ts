@@ -97,3 +97,120 @@ export const updateUser = async (username: string, county_state: string) => {
     throw err; // Re-throw the error to be handled upstream
   }
 }
+
+
+// ...existing code...
+
+export const getYieldsByUsername = async (username: string) => {
+  try {
+    const sql = 'SELECT * FROM CropYield WHERE username = ?';
+    const values = [username];
+    const rows = await query(sql, values);
+    return rows; // Return all yield records for this user
+  } catch (err) {
+    console.error('Get yields error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+export const createYield = async (yieldData: { 
+  crop_type: string, 
+  measurement_date: string, 
+  yieldacre: number, 
+  username: string ,
+  county_state: string
+}) => {
+  try {
+
+    const sql = 'INSERT INTO CropYield (crop_type, measurement_date, county_state, username, yieldacre) VALUES (?, ?, ?, ?, ?)';
+    const values = [
+      yieldData.crop_type,
+      yieldData.measurement_date,
+      yieldData.county_state,
+      yieldData.username,
+      yieldData.yieldacre
+    ];
+    console.log('SQL:', sql);
+    console.log('Values:', values);
+    const result = await query(sql, values);
+    return {
+      ...yieldData,
+    }; // Return the newly created record
+  } catch (err) {
+    console.error('Create yield error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+
+export const getAuditLogs = async (username: string, limit: number) => {
+  try {
+    // Sanitize the limit value to prevent SQL injection
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 10, 1000));
+    
+    // Use string concatenation for the LIMIT value
+    const sql = `SELECT * FROM CropYield_AuditLog WHERE username = ? ORDER BY action_timestamp DESC LIMIT ${safeLimit}`;
+    console.log('SQL:', sql);
+    const values = [username]; // Only username uses placeholder
+    
+    const rows = await query(sql, values);
+    return rows;
+  }
+  catch (err) {
+    console.error('Get audit logs error:', err);
+    throw err;
+  }
+}
+
+
+export const updateUserEntry = async (yieldData: {
+  username: string,
+  county_state: string,
+  crop_type: string,
+  measurement_date: string,
+  yieldacre: number
+}) => {
+  try {
+    const sql = 'UPDATE CropYield SET yieldacre = ? WHERE username = ? AND county_state = ? AND crop_type = ? AND measurement_date = ?';
+    const values = [
+      yieldData.yieldacre,
+      yieldData.username,
+      yieldData.county_state,
+      yieldData.crop_type,
+      yieldData.measurement_date
+    ];
+    
+    const result = await query(sql, values);
+    return result; // Return the result of the update operation
+  }
+  catch (err) {
+    console.error('Update yield error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+
+
+export const deleteUserEntry = async (yieldData: {
+  username: string,
+  crop_type: string,
+  measurement_date: string,
+  county_state: string
+}) => {
+  try {
+    const sql = 'DELETE FROM CropYield WHERE username = ? AND crop_type = ? AND measurement_date = ? AND county_state = ?';
+    const values = [
+      yieldData.username,
+      yieldData.crop_type,
+      yieldData.measurement_date,
+      yieldData.county_state
+    ];
+    
+    const result = await query(sql, values);
+    return result; // Return the result of the delete operation
+  }
+  catch (err) {
+    console.error('Delete yield error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}

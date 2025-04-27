@@ -32,7 +32,7 @@ const NavBar: React.FC<NavBarProps> = ({ username }) => {
         >
           Crop Yield
         </a>
-        <a href="/home" className="text-white hover:text-gray-200">Home</a>
+        <a href={`/home?username=${username}`} className="text-white hover:text-gray-200">Home</a>
       </div>
       <div className="flex items-center space-x-2">
         <button
