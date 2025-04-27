@@ -35,11 +35,15 @@ function HomePageContent() {
     const fetchUserInfo = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/users?username=${username}`);
+        const response = await fetch(`/api/GET?action=getUserInfo&username=${username}`);
         
         if (response.ok) {
           const data = await response.json();
-          setUserInfo(data);
+          if (data.success && data.result) {
+            setUserInfo(data.result);
+          } else {
+            console.error('Failed to fetch user info:', data.error || 'Unknown error');
+          }
         } else {
           console.error('Failed to fetch user info:', response.status);
         }
@@ -145,7 +149,10 @@ function HomePageContent() {
               location={userInfo?.county_state}
               formatLocation={formatLocation}
             />
-            <ClimateWidget />
+            <ClimateWidget 
+              county_state={userInfo?.county_state} 
+              formatLocation={formatLocation}
+            />
             <YieldsWidget />
             <AuditLogWidget 
               auditLogs={auditLogs} 
