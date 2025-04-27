@@ -174,13 +174,15 @@ function CropYieldContent() {
         }),
       });
       const data = await res.json();
+      console.log("advanced data: ", data);
       if (res.ok) {
-        alert(`Average Yield: ${data.result.average_yield}\nAverage Precipitation: ${data.result.average_precipitation}`);
+        alert(`Average Yield: ${data.result.avg_yield}\nAverage Precipitation: ${data.result.avg_precipitation}`);
       } else {
         alert("Failed to fetch averages.");
       }
     } catch (error) {
-      alert("An unexpected error occurred.");
+      alert("An unexpected error occurred while fetching averages.");
+      console.error(error);
     }
   };
 

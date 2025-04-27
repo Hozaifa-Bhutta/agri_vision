@@ -275,3 +275,35 @@ export const getClimateData = async (county_state: string, measurement_date: str
     throw err; // Re-throw the error to be handled upstream
   }
 }
+export const cropAdvancedQuery = async (username: string) => {
+
+  try {
+    const sql = `SELECT 
+          CY.username,
+          AVG(CY.yieldacre) AS avg_yield,
+          AR.avg_precipitation
+      FROM 
+          CropYield CY
+      JOIN (
+          SELECT 
+              county_state,
+              AVG(precipitation) AS avg_precipitation
+          FROM 
+              Climate
+          GROUP BY 
+              county_state
+      ) AR ON CY.county_state = AR.county_state
+      WHERE 
+          CY.username = ?
+      GROUP BY 
+          CY.username, AR.avg_precipitation;`;
+    const values = [username];
+    const rows = await query(sql, values);
+    console.log('Advanced query result:', rows);
+    return rows; // Return the result of the query
+  }
+  catch (err) {
+    console.error('Crop advanced query error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
