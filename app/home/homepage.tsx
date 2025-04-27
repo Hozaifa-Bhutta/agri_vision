@@ -9,6 +9,7 @@ import {
   YieldsWidget, 
   AuditLogWidget, 
   AboutWidget,
+  NewsWidget,
   AuditLogEntry
 } from './components';
 
@@ -38,8 +39,12 @@ function HomePageContent() {
         const response = await fetch(`/api/GET?action=getUserInfo&username=${username}`);
         
         if (response.ok) {
-          const data = (await response.json()).result;
-          setUserInfo(data);
+          const data = await response.json();
+          if (data.success && data.result) {
+            setUserInfo(data.result);
+          } else {
+            console.error('Failed to fetch user info:', data.error || 'Unknown error');
+          }
         } else {
           console.error('Failed to fetch user info:', response.status);
         }
@@ -63,6 +68,7 @@ function HomePageContent() {
         
         if (response.ok) {
           const data = (await response.json()).result;
+          console.log('Audit logs:', data);
           setAuditLogs(data);
         } else {
           console.error('Failed to fetch audit logs:', response.status);
@@ -145,7 +151,10 @@ function HomePageContent() {
               location={userInfo?.county_state}
               formatLocation={formatLocation}
             />
-            <ClimateWidget />
+            <ClimateWidget 
+              county_state={userInfo?.county_state} 
+              formatLocation={formatLocation}
+            />
             <YieldsWidget />
             <AuditLogWidget 
               auditLogs={auditLogs} 
@@ -155,7 +164,17 @@ function HomePageContent() {
           </div>
         )}
         
-        <AboutWidget />
+        {/* News widget spans full width */}
+        <div className="mt-6">
+          <NewsWidget 
+            county_state={userInfo?.county_state} 
+            formatLocation={formatLocation}
+          />
+        </div>
+        
+        <div className="mt-6">
+          <AboutWidget />
+        </div>
       </div>
     </div>
   );
