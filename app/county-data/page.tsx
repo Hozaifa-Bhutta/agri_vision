@@ -36,10 +36,20 @@ const [climateData, setClimateData] = useState<any[]>([]);
 
   const fetchCounties = async () => {
     try {
-      const res = await fetch(`/api/yourEndpoint?action=getCounties`);
+      const res = await fetch(`/api/GET?action=getCounties`);
       const data = await res.json();
       if (data.success) {
-        setCounties(data.result);
+        // Convert county objects to strings by extracting county_state property
+        const countyStrings = data.result.map((countyObj: any) => 
+          typeof countyObj === 'object' && countyObj !== null 
+            ? countyObj.county_state 
+            : String(countyObj)
+        );
+        
+        // Remove duplicates if any
+        const uniqueCounties = [...new Set(countyStrings)];
+        
+        setCounties(uniqueCounties as string[]);
       }
     } catch (error) {
       console.error("Failed to fetch counties:", error);
@@ -48,28 +58,42 @@ const [climateData, setClimateData] = useState<any[]>([]);
 
   const fetchUserInfo = async () => {
     try {
+      console.log("Fetching user info for username:", username);
       const res = await fetch(`/api/GET?action=getUserInfo&username=${username}`);
       if (!res.ok) throw new Error('Failed to fetch user info');
       const data = (await res.json()).result;
       console.log("Fetched user county:", data.county_state);
       setCounty(data.county_state);
-
+      console.log("Fetched user info:", data);
       fetchUserCountyData(data.county_state);
     } catch (e: any) {
       console.error(e.message);
       setError('Could not fetch user info');
     }
   };
-
   const fetchUserCountyData = async (countyState: string) => {
     try {
-      const soilRes = await fetch(`/api/GET?action=getSoilData&county=${encodeURIComponent(countyState)}`);
+      const soilRes = await fetch(`/api/GET?action=getSoilData&countyState=${encodeURIComponent(countyState)}`);
       const soilData = await soilRes.json();
       setUserSoilData(soilData.result || []);
-  
-      const datesRes = await fetch(`/api/GET?action=getAvailableDates&county=${encodeURIComponent(countyState)}`);
+      
+      const datesRes = await fetch(`/api/GET?action=getAvailableDates&countyState=${encodeURIComponent(countyState)}`);
       const datesData = await datesRes.json();
-      setUserAvailableDates(datesData.result || []);
+      console.log("Raw dates from API:", datesData.result);
+      
+      // Extract measurement_date property from each object
+      const dateStrings = datesData.result.map((dateObj: any) => 
+        typeof dateObj === 'object' && dateObj !== null 
+          ? dateObj.measurement_date 
+          : String(dateObj)
+      );
+      
+      // Remove duplicates if any
+      const uniqueDates = [...new Set(dateStrings)];
+      
+      console.log("Processed dates:", uniqueDates);
+      setUserAvailableDates(uniqueDates);
+      
       setUserSelectedDate(""); // reset old selection
       setUserClimateData([]);
     } catch (error) {
@@ -80,14 +104,28 @@ const [climateData, setClimateData] = useState<any[]>([]);
 
   const fetchSelectedCountyData = async (countyState: string) => {
     try {
-      const soilRes = await fetch(`/api/GET?action=getSoilData&county=${encodeURIComponent(countyState)}`);
+      const soilRes = await fetch(`/api/GET?action=getSoilData&countyState=${encodeURIComponent(countyState)}`);
       const soilData = await soilRes.json();
       setSelectedSoilData(soilData.result || []);
   
       // Also fetch available dates
-      const datesRes = await fetch(`/api/GET?action=getAvailableDates&county=${encodeURIComponent(countyState)}`);
+      const datesRes = await fetch(`/api/GET?action=getAvailableDates&countyState=${encodeURIComponent(countyState)}`);
       const datesData = await datesRes.json();
-      setAvailableDates(datesData.result || []);
+      console.log("Raw dates from API for selected county:", datesData.result);
+      
+      // Extract measurement_date property from each object
+      const dateStrings = datesData.result.map((dateObj: any) => 
+        typeof dateObj === 'object' && dateObj !== null 
+          ? dateObj.measurement_date 
+          : String(dateObj)
+      );
+      
+      // Remove duplicates if any
+      const uniqueDates = [...new Set(dateStrings)];
+      
+      console.log("Processed dates for selected county:", uniqueDates);
+      setAvailableDates(uniqueDates as string[]);
+      
       setSelectedDate(""); // Reset the selected date
       setClimateData([]); // Clear old climate data
     } catch (error) {
@@ -97,7 +135,7 @@ const [climateData, setClimateData] = useState<any[]>([]);
 
   const fetchClimateData = async (countyState: string, date: string) => {
     try {
-      const climateRes = await fetch(`/api/GET?action=getClimateData&county=${encodeURIComponent(countyState)}&date=${encodeURIComponent(date)}`);
+      const climateRes = await fetch(`/api/GET?action=getClimateData&countyState=${encodeURIComponent(countyState)}&measurementDate=${encodeURIComponent(date)}`);
       const climateDataJson = await climateRes.json();
       setClimateData(climateDataJson.result || []);
     } catch (error) {
@@ -106,7 +144,7 @@ const [climateData, setClimateData] = useState<any[]>([]);
   };
   const fetchUserClimateData = async (countyState: string, date: string) => {
     try {
-      const climateRes = await fetch(`/api/GET?action=getClimateData&county=${encodeURIComponent(countyState)}&date=${encodeURIComponent(date)}`);
+      const climateRes = await fetch(`/api/GET?action=getClimateData&countyState=${encodeURIComponent(countyState)}&measurementDate=${encodeURIComponent(date)}`);
       const climateDataJson = await climateRes.json();
       setUserClimateData(climateDataJson.result || []);
     } catch (error) {
@@ -211,11 +249,11 @@ const [climateData, setClimateData] = useState<any[]>([]);
               <tbody className="text-black opacity-100">
                 {userSoilData.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-100">
-                    <td className="border p-2 text-black">{item.soil_org_carbon_stock}</td>
+                    <td className="border p-2 text-black">{item.soil_organic_carbon_stock}</td>
                     <td className="border p-2 text-black">{item.bulk_density}</td>
                     <td className="border p-2 text-black">{item.nitrogen}</td>
-                    <td className="border p-2 text-black">{item.soil_org_carbon}</td>
-                    <td className="border p-2 text-black">{item.pH_water}</td>
+                    <td className="border p-2 text-black">{item.soil_organic_carbon}</td>
+                    <td className="border p-2 text-black">{item.ph}</td>
                   </tr>
                 ))}
               </tbody>
@@ -355,11 +393,11 @@ const [climateData, setClimateData] = useState<any[]>([]);
               <tbody>
                 {selectedSoilData.map((item, index) => (
                   <tr key={index} className="hover:bg-gray-100">
-                    <td className="border p-2 text-black">{item.soil_org_carbon_stock}</td>
+                    <td className="border p-2 text-black">{item.soil_organic_carbon_stock}</td>
                     <td className="border p-2 text-black">{item.bulk_density}</td>
                     <td className="border p-2 text-black">{item.nitrogen}</td>
-                    <td className="border p-2 text-black">{item.soil_org_carbon}</td>
-                    <td className="border p-2 text-black">{item.pH_water}</td>
+                    <td className="border p-2 text-black">{item.soil_organic_carbon}</td>
+                    <td className="border p-2 text-black">{item.ph}</td>
                   </tr>
                 ))}
               </tbody>

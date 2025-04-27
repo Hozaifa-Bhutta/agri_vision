@@ -1,3 +1,4 @@
+import { count } from 'console';
 import mysql from 'mysql2/promise';
 
 const pool = mysql.createPool({
@@ -66,7 +67,6 @@ export const getCounties = async () => {
   try {
     const sql = 'SELECT * FROM Counties';
     const rows = await query(sql, []);
-    console.log(rows);
     return rows; // Return the result of the query
   } catch (err) {
     console.error('Get counties error:', err);
@@ -211,6 +211,41 @@ export const deleteUserEntry = async (yieldData: {
   }
   catch (err) {
     console.error('Delete yield error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+export const getSoilData = async (county_state: string) => {
+  try {
+    const sql = 'SELECT * FROM Soil WHERE county_state = ?';
+    const values = [county_state];
+    const rows = await query(sql, values);
+    console.log('Soil data:', rows);
+    return rows; // Return the result of the query
+  } catch (err) {
+    console.error('Get soil data error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+export const getAvailableDates = async (county_state: string) => {
+  try {
+    const sql = 'SELECT DISTINCT measurement_date FROM Climate WHERE county_state = ?';
+    const values = [county_state];
+    const rows = await query(sql, values);
+    return rows; // Return the result of the query
+  } catch (err) {
+    console.error('Get available dates error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+export const getClimateData = async (county_state: string, measurement_date: string) => {
+  try {
+    const sql = 'SELECT * FROM Climate WHERE county_state = ? AND measurement_date = ?';
+    const values = [county_state, measurement_date];
+    const rows = await query(sql, values);
+    return rows; // Return the result of the query
+  } catch (err) {
+    console.error('Get climate data error:', err);
     throw err; // Re-throw the error to be handled upstream
   }
 }

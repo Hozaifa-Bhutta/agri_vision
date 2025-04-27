@@ -3,10 +3,15 @@ import {
   getCounties,
   getUserInfo,
   getYieldsByUsername,
-  getAuditLogs
+  getAuditLogs,
+  getSoilData,
+  getAvailableDates,
+  getClimateData,
 } from '@/lib/db';
 import { fetchWeatherLast7Days } from '@/lib/weather';
 import {fetchFarmingNews} from '@/lib/farmingNews';
+import { get } from 'http';
+import { count } from 'console';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -60,6 +65,33 @@ export async function GET(req: NextRequest) {
         const newsData = await fetchFarmingNews(countyState);
         return NextResponse.json({ success: true, result: newsData });
       }
+      case `getSoilData` : {
+        const countyState = searchParams.get('countyState');
+        if (!countyState) {
+          return NextResponse.json({ success: false, error: 'County and state are required' }, { status: 400 });
+        }
+        const soilData = await getSoilData(countyState);
+        return NextResponse.json({ success: true, result: soilData });
+      }
+      case 'getAvailableDates': {
+        const countyState = searchParams.get('countyState');
+        if (!countyState) {
+          return NextResponse.json({ success: false, error: 'County and state are required' }, { status: 400 });
+        }
+        const dates = await getAvailableDates(countyState);
+        console.log('Available dates:', dates);
+        return NextResponse.json({ success: true, result: dates });
+      }
+      case 'getClimateData': {
+        const countyState = searchParams.get('countyState');
+        const measurementDate = searchParams.get('measurementDate');
+        if (!countyState || !measurementDate) {
+          return NextResponse.json({ success: false, error: 'County/state and measurement date are required' }, { status: 400 });
+        }
+        const climateData = await getClimateData(countyState, measurementDate);
+        return NextResponse.json({ success: true, result: climateData });
+      }
+
 
       default:
         return NextResponse.json({ success: false, error: 'Unknown GET action' }, { status: 400 });
