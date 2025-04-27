@@ -3,6 +3,7 @@ export { default as ClimateWidget } from './ClimateWidget';
 export { default as YieldsWidget } from './YieldsWidget';
 export { default as AuditLogWidget } from './AuditLogWidget';
 export { default as AboutWidget } from './AboutWidget';
+export { default as NewsWidget } from './NewsWidget';
 
 export interface AuditLogEntry {
   action_type: string;

@@ -8,17 +8,48 @@ interface AuditLogWidgetProps {
 }
 
 const AuditLogWidget: React.FC<AuditLogWidgetProps> = ({ auditLogs, loading, formatDate }) => {
+  // Helper function to get the appropriate style and text for each action type
+  const getActionStyle = (actionType: string) => {
+    switch (actionType) {
+      case 'INSERT':
+        return {
+          style: 'bg-green-100 text-green-800',
+          label: 'Added'
+        };
+      case 'UPDATE':
+        return {
+          style: 'bg-blue-100 text-blue-800',
+          label: 'Updated'
+        };
+      case 'DELETE':
+        return {
+          style: 'bg-red-100 text-red-800',
+          label: 'Deleted'
+        };
+      default:
+        return {
+          style: 'bg-gray-100 text-gray-800',
+          label: actionType
+        };
+    }
+  };
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="bg-white p-6 rounded-lg shadow-md h-full flex flex-col">
       <h2 className="text-lg font-medium text-gray-800 mb-4">Activity History</h2>
+      
       {loading ? (
-        <p className="text-gray-700">Loading activity history...</p>
+        <div className="flex-grow flex items-center justify-center">
+          <p className="text-gray-700">Loading activity history...</p>
+        </div>
       ) : auditLogs.length === 0 ? (
-        <p className="text-gray-700">No activity records found.</p>
+        <div className="flex-grow flex items-center justify-center">
+          <p className="text-gray-700">No activity records found.</p>
+        </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-auto flex-grow" style={{ maxHeight: "calc(100% - 2rem)" }}>
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50"> {/* This is the header of the table */}
+            <thead className="bg-gray-50 sticky top-0">
               <tr>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Action
@@ -34,28 +65,29 @@ const AuditLogWidget: React.FC<AuditLogWidgetProps> = ({ auditLogs, loading, for
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200"> {/* body of the table */}
-              {/* create a row for each log */}
-              {auditLogs.map((log, index) => ( 
-                <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}> {/* alternate row colors */}
-                  <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      log.action_type === 'INSERT' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {log.action_type === 'INSERT' ? 'Added' : 'Deleted'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(log.action_timestamp)}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                    {log.crop_type}
-                  </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
-                    {log.yieldacre ? `${log.yieldacre} bu/acre` : 'N/A'}
-                  </td>
-                </tr>
-              ))}
+            <tbody className="bg-white divide-y divide-gray-200">
+              {auditLogs.map((log, index) => {
+                const { style, label } = getActionStyle(log.action_type);
+                
+                return (
+                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${style}`}>
+                        {label}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(log.action_timestamp)}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                      {log.crop_type}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">
+                      {log.yieldacre ? `${log.yieldacre} bu/acre` : 'N/A'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
