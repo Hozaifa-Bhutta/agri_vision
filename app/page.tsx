@@ -9,46 +9,48 @@ export default function LoginPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
-
+  
     console.log('Login Form Submitted');
     console.log('Username:', username);
-    console.log('Password:', password);
-
+    
     try {
-      const response: Response = await fetch('/api/POST', {
+      console.log('Sending login request to API');
+      const response = await fetch('/api/POST', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'checkUser', // Use the checkUser action
+          action: 'login',
           params: {
             username,
-            password,
-          },
+            password
+          }
         }),
       });
-
-      console.log('Response received from API:', response);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('API Response Data:', data);
-
-        if (data.success) {
-          // Login successful, redirect to home page
-          console.log('Login successful, redirecting to home...');
-          router.push(`/home?username=${username}`);
-        } else {
-          // Login failed, display error message
-          console.log('Login failed:', data.error);
-          alert(data.error || 'Invalid credentials');
-        }
+      
+      console.log('API response status:', response.status);
+      
+      if (response.status === 401) {
+        console.error('Login failed: Invalid credentials');
+        alert('Login failed. Invalid username or password.');
+        return;
+      }
+      
+      if (!response.ok) {
+        console.error('Login failed:', response.status);
+        alert('Login failed. Please try again later.');
+        return;
+      }
+  
+      const data = await response.json();
+      console.log('Login successful:', data);
+      
+      if (data.success) {
+        alert('Login successful!');
+        router.push(`/home?username=${username}`);
       } else {
-        // Handle non-200 responses
-        const errorData = await response.json();
-        console.log('Error in response:', errorData);
-        alert(errorData.error || 'Login failed. Please try again.');
+        alert('Login failed: ' + (data.error || 'Unknown error'));
       }
     } catch (error: unknown) {
       console.error('Login error:', error);

@@ -14,10 +14,30 @@ export async function POST(req: NextRequest) {
     const { action, params } = body;
 
     switch (action) {
-      case 'checkUser': {
+      case 'login': {
         const { username, password } = params;
-        const result = await checkUser(username, password);
-        return NextResponse.json({ success: true, result });
+        if (!username || !password) {
+          return NextResponse.json(
+            { success: false, error: 'Username and password are required' },
+            { status: 400 }
+          );
+        }
+        
+        const user = await checkUser(username, password);
+        if (!user) {
+          return NextResponse.json(
+            { success: false, error: 'Invalid credentials' },
+            { status: 401 }
+          );
+        }
+        
+        return NextResponse.json({ 
+          success: true, 
+          user: { 
+            username: user.username,
+            county_state: user.county_state 
+          }
+        });
       }
 
       case 'createUser': {

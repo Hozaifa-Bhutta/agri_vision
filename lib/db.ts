@@ -1,5 +1,6 @@
 import { count } from 'console';
 import mysql from 'mysql2/promise';
+import bcrypt from 'bcrypt'; 
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || '34.122.161.108', // Use env var, default to localhost
@@ -34,34 +35,59 @@ export const query = async (sql: string, values: any[]): Promise<any[]> => {
   };
 
 // method to check if user exists and if password is correct
-export const checkUser = async (username: string, password: string) => {
-  try {
-    const sql = 'SELECT * FROM UserAccount WHERE username = ? AND password = ?';
-    const values = [username, password];
-    const rows = await query(sql, values);
-    return rows.length > 0; // Return true if user exists, false otherwise
 
-    } catch (err) {
-        console.error('Check user error:', err);
-        throw err; // Re-throw the error to be handled upstream
-    }
+export const checkUser = async (username: string, password: string) => {
+  const sql = 'SELECT * FROM UserAccount WHERE username = ?';
+  const result = await query(sql, [username]);
+
+  if (result.length === 0) {
+    return false; // no such user
+  }
+
+  const user = result[0];
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  console.log("password:", password);
+  console.log("hashed password:", user.password);
+  console.log("password match:", passwordMatch);
+
+  if (passwordMatch) {
+    // Return user object without the password
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  } else {
+    return false;
+  }
+};
+
+
+export const doesUserExist = async (username: string) => {
+  const sql = 'SELECT * FROM UserAccount WHERE username = ?';
+  const result = await query(sql, [username]);
+  return result.length > 0;
 }
 
 export const createUser = async (username: string, password: string, county_state: string) => {
   try {
     // first check if user exists
-    if (await checkUser(username, password)) {
+    if (await doesUserExist(username)) {
       throw new Error('User already exists');
     }
+    
+
+    // Hash the password before saving
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
     const sql = 'INSERT INTO UserAccount (username, password, county_state) VALUES (?, ?, ?)';
-    const values = [username, password, county_state];
+    const values = [username, hashedPassword, county_state];
     const result = await query(sql, values);
+
     return result; // Return the result of the insert operation
   } catch (err) {
     console.error('Create user error:', err);
     throw err; // Re-throw the error to be handled upstream
   }
-}
+};
 
 export const getCounties = async () => {
   try {

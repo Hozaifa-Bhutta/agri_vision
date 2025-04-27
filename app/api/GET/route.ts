@@ -7,6 +7,7 @@ import {
   getSoilData,
   getAvailableDates,
   getClimateData,
+  checkUser
 } from '@/lib/db';
 import { fetchWeatherLast7Days } from '@/lib/weather';
 import {fetchFarmingNews} from '@/lib/farmingNews';
@@ -91,6 +92,22 @@ export async function GET(req: NextRequest) {
         const climateData = await getClimateData(countyState, measurementDate);
         return NextResponse.json({ success: true, result: climateData });
       }
+      case 'checkUser': {
+        const username = searchParams.get('username');
+        const password = searchParams.get('password');
+        console.log('Username:', username);
+        console.log('Password:', password);
+        if (!username || !password) {
+          return NextResponse.json({ success: false, error: 'Username and password are required' }, { status: 400 });
+        }
+        const result = await checkUser(username, password);
+        if (result) {
+          return NextResponse.json({ success: true, result });
+        } else {
+          return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
+        }
+      }
+
 
 
       default:
