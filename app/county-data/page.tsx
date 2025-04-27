@@ -168,8 +168,10 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
 
   const fetchAvgEnvData = async () => {
   try {
+    console.log("Fetching average environmental data");
     const res = await fetch(`/api/GET?action=getAvgEnvData`);  // Assuming your backend has this ready
     const data = await res.json();
+    console.log("Avg environmental data:", data.result);
     setAvgEnvData(data.result || []);
   } catch (error) {
     console.error("Failed to fetch avg environmental data:", error);

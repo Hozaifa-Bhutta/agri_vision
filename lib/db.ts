@@ -46,9 +46,6 @@ export const checkUser = async (username: string, password: string) => {
 
   const user = result[0];
   const passwordMatch = await bcrypt.compare(password, user.password);
-  console.log("password:", password);
-  console.log("hashed password:", user.password);
-  console.log("password match:", passwordMatch);
 
   if (passwordMatch) {
     // Return user object without the password
@@ -156,8 +153,7 @@ export const createYield = async (yieldData: {
       yieldData.username,
       yieldData.yieldacre
     ];
-    console.log('SQL:', sql);
-    console.log('Values:', values);
+
     const result = await query(sql, values);
     return {
       ...yieldData,
@@ -176,7 +172,6 @@ export const getAuditLogs = async (username: string, limit: number) => {
     
     // Use string concatenation for the LIMIT value
     const sql = `SELECT * FROM CropYield_AuditLog WHERE username = ? ORDER BY action_timestamp DESC LIMIT ${safeLimit}`;
-    console.log('SQL:', sql);
     const values = [username]; // Only username uses placeholder
     
     const rows = await query(sql, values);
@@ -246,7 +241,6 @@ export const getSoilData = async (county_state: string) => {
     const sql = 'SELECT * FROM Soil WHERE county_state = ?';
     const values = [county_state];
     const rows = await query(sql, values);
-    console.log('Soil data:', rows);
     return rows; // Return the result of the query
   } catch (err) {
     console.error('Get soil data error:', err);
@@ -300,11 +294,30 @@ export const cropAdvancedQuery = async (username: string) => {
           CY.username, CY.county_state, AR.avg_precipitation;`;
     const values = [username];
     const rows = await query(sql, values);
-    console.log('Advanced query result:', rows);
     return rows; // Return the result of the query
   }
   catch (err) {
     console.error('Crop advanced query error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+export const getAvgEnvData = async () => {
+  try {
+    const sql_query = `
+      SELECT
+        Soil.county_state,
+        AVG(precipitation) AS avg_precipitation,
+        AVG(ph) AS avg_pH_water
+      FROM Soil
+      JOIN Climate ON Soil.county_state = Climate.county_state
+      WHERE Soil.county_state = Climate.county_state
+      GROUP BY Soil.county_state;
+    `;
+    const rows = await query(sql_query, []);
+    return rows; // Return the result of the query
+  } catch (err) {
+    console.error('Get average environmental data error:', err);
     throw err; // Re-throw the error to be handled upstream
   }
 }

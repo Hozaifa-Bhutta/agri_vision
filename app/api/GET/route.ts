@@ -9,6 +9,7 @@ import {
   getClimateData,
   checkUser,
   cropAdvancedQuery,
+  getAvgEnvData,
 } from '@/lib/db';
 import { fetchWeatherLast7Days } from '@/lib/weather';
 import {fetchFarmingNews} from '@/lib/farmingNews';
@@ -114,6 +115,15 @@ export async function GET(req: NextRequest) {
         const result = await cropAdvancedQuery(username);
         if (!result) {
           return NextResponse.json({ success: false, error: 'Failed to fetch crop data' }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, result: result });
+      }
+      case 'getAvgEnvData': {
+        console.log('Fetching average environmental data');
+        const result = await getAvgEnvData();
+        console.log('Average environmental data:', result);
+        if (!result) {
+          return NextResponse.json({ success: false, error: 'Failed to fetch average environmental data' }, { status: 500 });
         }
         return NextResponse.json({ success: true, result: result });
       }
