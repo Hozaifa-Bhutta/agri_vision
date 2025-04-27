@@ -97,7 +97,7 @@ function CropYieldContent() {
         setMessage("Yield updated successfully!");
         fetchYields();
       } else {
-        const result = await res.json();
+        const result = (await res.json()).result;
         setError(result.error || "Something went wrong while editing.");
       }
     } catch (err: any) {
@@ -124,7 +124,7 @@ function CropYieldContent() {
         setMessage("Yield deleted successfully!");
         fetchYields();
       } else {
-        const result = await res.json();
+        const result = (await res.json()).result;
         setError(result.error || "Something went wrong while deleting.");
       }
     } catch (err: any) {

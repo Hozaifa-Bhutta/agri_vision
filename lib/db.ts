@@ -163,26 +163,53 @@ export const getAuditLogs = async (username: string, limit: number) => {
 }
 
 
-export const deleteYieldById = async (
-  compositeId: { 
-    cropType: string, 
-    measurementDate: string, 
-    username: string, 
-    county_state: string 
-  }
-) => {
+export const updateUserEntry = async (yieldData: {
+  username: string,
+  county_state: string,
+  crop_type: string,
+  measurement_date: string,
+  yieldacre: number
+}) => {
   try {
-    const sql = 'DELETE FROM CropYield WHERE crop_type = ? AND measurement_date = ? AND username = ? AND county_state = ?';
+    const sql = 'UPDATE CropYield SET yieldacre = ? WHERE username = ? AND county_state = ? AND crop_type = ? AND measurement_date = ?';
     const values = [
-      compositeId.cropType,
-      compositeId.measurementDate,
-      compositeId.username,
-      compositeId.county_state
+      yieldData.yieldacre,
+      yieldData.username,
+      yieldData.county_state,
+      yieldData.crop_type,
+      yieldData.measurement_date
+    ];
+    
+    const result = await query(sql, values);
+    return result; // Return the result of the update operation
+  }
+  catch (err) {
+    console.error('Update yield error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+
+
+export const deleteUserEntry = async (yieldData: {
+  username: string,
+  crop_type: string,
+  measurement_date: string,
+  county_state: string
+}) => {
+  try {
+    const sql = 'DELETE FROM CropYield WHERE username = ? AND crop_type = ? AND measurement_date = ? AND county_state = ?';
+    const values = [
+      yieldData.username,
+      yieldData.crop_type,
+      yieldData.measurement_date,
+      yieldData.county_state
     ];
     
     const result = await query(sql, values);
     return result; // Return the result of the delete operation
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Delete yield error:', err);
     throw err; // Re-throw the error to be handled upstream
   }
