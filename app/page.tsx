@@ -47,7 +47,7 @@ export default function LoginPage() {
       console.log('Login successful:', data);
       
       if (data.success) {
-        alert('Login successful!');
+       console.log('Redirecting to home page');
         router.push(`/home?username=${username}`);
       } else {
         alert('Login failed: ' + (data.error || 'Unknown error'));

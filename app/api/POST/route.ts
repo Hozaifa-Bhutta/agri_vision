@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
         }
         
         const user = await checkUser(username, password);
-        if (!user) {
+        if (!user || typeof user !== 'object' || !user.username || !user.county_state) {
           return NextResponse.json(
             { success: false, error: 'Invalid credentials' },
             { status: 401 }
