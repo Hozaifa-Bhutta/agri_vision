@@ -165,14 +165,8 @@ function CropYieldContent() {
 
   const handleSeeAverage = async () => {
     try {
-      const res = await fetch('/api/POST', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'cropAdvancedQuery',
-          params: { username },
-        }),
-      });
+      const res = await fetch(`/api/GET?action=cropAdvancedQuery&username=${username}`);
+      if (!res.ok) throw new Error('Failed to fetch averages');
       const data = await res.json();
       console.log("advanced data: ", data);
       if (res.ok) {

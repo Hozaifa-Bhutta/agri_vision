@@ -7,7 +7,8 @@ import {
   getSoilData,
   getAvailableDates,
   getClimateData,
-  checkUser
+  checkUser,
+  cropAdvancedQuery,
 } from '@/lib/db';
 import { fetchWeatherLast7Days } from '@/lib/weather';
 import {fetchFarmingNews} from '@/lib/farmingNews';
@@ -95,8 +96,6 @@ export async function GET(req: NextRequest) {
       case 'checkUser': {
         const username = searchParams.get('username');
         const password = searchParams.get('password');
-        console.log('Username:', username);
-        console.log('Password:', password);
         if (!username || !password) {
           return NextResponse.json({ success: false, error: 'Username and password are required' }, { status: 400 });
         }
@@ -106,6 +105,17 @@ export async function GET(req: NextRequest) {
         } else {
           return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
         }
+      }
+      case 'cropAdvancedQuery': {
+        const username = searchParams.get('username');
+        if (!username) {
+          return NextResponse.json({ success: false, error: 'Username is required' }, { status: 400 });
+        }
+        const result = await cropAdvancedQuery(username);
+        if (!result) {
+          return NextResponse.json({ success: false, error: 'Failed to fetch crop data' }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, result: result });
       }
 
 
