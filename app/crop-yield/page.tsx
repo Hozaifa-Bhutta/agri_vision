@@ -167,15 +167,47 @@ function CropYieldContent() {
     try {
       const res = await fetch(`/api/GET?action=cropAdvancedQuery&username=${username}`);
       if (!res.ok) throw new Error('Failed to fetch averages');
+  
       const data = await res.json();
       console.log("advanced data: ", data);
+  
       if (res.ok) {
-        alert(`Average Yield: ${data.result.avg_yield}\nAverage Precipitation: ${data.result.avg_precipitation}`);
+        const match = data.result.find((item: any) => item.county_state?.toLowerCase() === county.toLowerCase());
+  
+        if (match) {
+          alert(`Average Yield: ${match.avg_yield}\nAverage Precipitation: ${match.avg_precipitation}`);
+        } else {
+          alert("No matching county found.");
+        }
       } else {
         alert("Failed to fetch averages.");
       }
     } catch (error) {
       alert("An unexpected error occurred while fetching averages.");
+      console.error(error);
+    }
+  };
+
+  const handleAdminComparison = async () => {
+    try {
+      const res = await fetch(`/api/GET?action=cropAdminComparison&username=${username}&county_state=${county}`);
+      if (!res.ok) throw new Error('Failed to fetch admin comparison');
+  
+      const data = await res.json();
+      console.log("admin comparison data: ", data);
+  
+      if (res.ok) {
+        const result = data.result;
+        if (result) {
+          alert(`User Average Yield: ${result.user_avg_yield}\nAdministrator Average Yield: ${result.admin_avg_yield}`);
+        } else {
+          alert("No comparison data found.");
+        }
+      } else {
+        alert("Failed to fetch comparison.");
+      }
+    } catch (error) {
+      alert("An unexpected error occurred while fetching admin comparison.");
       console.error(error);
     }
   };
@@ -240,6 +272,7 @@ function CropYieldContent() {
             <div className="col-span-3 flex space-x-4">
               <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Save Yield</button>
               <button type="button" onClick={handleSeeAverage} className="bg-purple-500 text-white px-4 py-2 rounded">See Average</button>
+              <button type="button" onClick={handleAdminComparison} className="bg-indigo-500 text-white px-4 py-2 rounded">Admin?</button>
             </div>
           </form>
 
