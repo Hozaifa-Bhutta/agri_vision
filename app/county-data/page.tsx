@@ -99,7 +99,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       
       const uniqueDates = [...new Set(dateStrings)];
       
-      setUserAvailableDates(uniqueDates);
+      setUserAvailableDates(uniqueDates as string[]);
       
       setUserSelectedDate(""); 
       setUserClimateData([]);

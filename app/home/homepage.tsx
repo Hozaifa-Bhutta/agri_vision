@@ -148,11 +148,11 @@ function HomePageContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* <UserProfileWidget 
               username={userInfo?.username || username} 
-              location={userInfo?.county_state}
+              location={userInfo?.county_state || ''} 
               formatLocation={formatLocation}
             /> */}
             <ClimateWidget 
-              county_state={userInfo?.county_state} 
+              county_state={userInfo?.county_state || ''} 
               formatLocation={formatLocation}
             />
             {/* <YieldsWidget /> */}

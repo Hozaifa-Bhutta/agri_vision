@@ -257,7 +257,7 @@ function ProfileContent() {
                     styles={{
                       ...customStyles,
                       control: (base, state) => ({
-                        ...customStyles.control(base, state),
+                        ...(customStyles.control?.(base, state) ?? base),
                         paddingLeft: '30px',
                       }),
                     }}
