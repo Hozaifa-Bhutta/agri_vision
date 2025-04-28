@@ -21,7 +21,6 @@ function CountyDataContent() {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Dropdown counties
   const [counties, setCounties] = useState<string[]>([]);
   const [selectedCounty, setSelectedCounty] = useState<string>("");
 
@@ -48,7 +47,6 @@ const [selectedAvgEnvData, setSelectedAvgEnvData] = useState<any[]>([]);
 const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
 
 
-  // --- Fetch Functions ---
 
   const fetchCounties = async () => {
     try {
@@ -62,7 +60,6 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
             : String(countyObj)
         );
         
-        // Remove duplicates if any
         const uniqueCounties = [...new Set(countyStrings)];
         
         setCounties(uniqueCounties as string[]);
@@ -94,19 +91,17 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       const datesRes = await fetch(`/api/GET?action=getAvailableDates&countyState=${encodeURIComponent(countyState)}`);
       const datesData = await datesRes.json();
       
-      // Extract measurement_date property from each object
       const dateStrings = datesData.result.map((dateObj: any) => 
         typeof dateObj === 'object' && dateObj !== null 
           ? dateObj.measurement_date 
           : String(dateObj)
       );
       
-      // Remove duplicates if any
       const uniqueDates = [...new Set(dateStrings)];
       
       setUserAvailableDates(uniqueDates);
       
-      setUserSelectedDate(""); // reset old selection
+      setUserSelectedDate(""); 
       setUserClimateData([]);
     } catch (error) {
       console.error("Failed to fetch user county soil or date data:", error);
@@ -120,25 +115,22 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       const soilData = await soilRes.json();
       setSelectedSoilData(soilData.result || []);
   
-      // Also fetch available dates
       const datesRes = await fetch(`/api/GET?action=getAvailableDates&countyState=${encodeURIComponent(countyState)}`);
       const datesData = await datesRes.json();
       console.log("Raw dates from API for selected county:", datesData.result);
       
-      // Extract measurement_date property from each object
       const dateStrings = datesData.result.map((dateObj: any) => 
         typeof dateObj === 'object' && dateObj !== null 
           ? dateObj.measurement_date 
           : String(dateObj)
       );
       
-      // Remove duplicates if any
       const uniqueDates = [...new Set(dateStrings)];
       
       setAvailableDates(uniqueDates as string[]);
       
-      setSelectedDate(""); // Reset the selected date
-      setClimateData([]); // Clear old climate data
+      setSelectedDate("");
+      setClimateData([]);
     } catch (error) {
       console.error("Failed to fetch selected county soil or date data:", error);
     }
@@ -166,7 +158,6 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
 
   const fetchAvgEnvData = async (countyState: string) => {
   try {
-    // todo: pass in the county state (right now that doesn't work because countyState is null for some reason)
     console.log("Fetching average environmental data");
     console.log("County state for avg env data:", countyState);
     const res = await fetch(`/api/GET?action=getAvgEnvData&countyState=${encodeURIComponent(countyState)}`);
@@ -182,7 +173,6 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
 };
   
 
-  // --- UseEffect to Load on Page Load ---
 
   useEffect(() => {
     console.log("CountyDataPage: Pathname changed:", pathname);
@@ -204,7 +194,6 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     }
   }, [county]);
 
-  // --- Navigation Functions ---
 
   const goToProfile = () => {
     router.push(`/profile?username=${username}`);
@@ -217,10 +206,10 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
   function formatCountyName(name: string) {
     if (!name) return "";
     
-    const parts = name.split(/[\s,]+/); // split by spaces or commas
+    const parts = name.split(/[\s,]+/);
     if (parts.length >= 2) {
-      const county = parts.slice(0, -1).join(" "); // all except last
-      const state = parts[parts.length - 1]; // last part
+      const county = parts.slice(0, -1).join(" ");
+      const state = parts[parts.length - 1];
   
       return (
         county
@@ -238,7 +227,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
   }
   
 
-  // --- Page Render ---
+
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -298,7 +287,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     </select>
   </>
 )}
-          {/* Soil Data Table */}
+          {/* User Soil Data Table */}
           <h3 className="text-lg font-semibold mt-8 mb-2">Soil Data</h3>
           <div className="overflow-x-auto w-full">
             <table className="table-auto w-full text-sm border text-black">
@@ -361,6 +350,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     ))}
   </tbody>
 </table>
+{/* User County Average Environmental Data */}
 {userAvgEnvData.length >= 0 && (
   <div className="flex flex-col bg-white p-8 m-4 rounded shadow-md text-black w-full items-center">
     <h2 className="text-2xl font-bold mb-4 text-center">Average Precipitation and pH Water by County</h2>
@@ -462,49 +452,8 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     </select>
   </>
 )}
-{/* Selected County Climate Data Table */}
-{climateData.length >= 0 && (
-  <>
-    <h3 className="text-lg font-semibold mt-8 mb-2">Climate Data for {selectedDate}</h3>
-    <div className="overflow-x-auto w-full">
-    <table className="table-auto w-full text-sm border text-black">
-  <thead>
-    <tr className="bg-gray-200">
-      <th className="border p-2 text-black">Min Temp (°C)</th>
-      <th className="border p-2 text-black">Max Temp (°C)</th>
-      <th className="border p-2 text-black">Precipitation (mm)</th>
-      <th className="border p-2 text-black">Humidity (%)</th>
-      <th className="border p-2 text-black">Wind (m/s)</th>
-      <th className="border p-2 text-black">Solar Radiation (W/m²)</th>
-      <th className="border p-2 text-black">Vapor Pressure Deficit (kPa)</th>
-      <th className="border p-2 text-black">Reference ET₀ (mm/day)</th>
-      <th className="border p-2 text-black">Elevation (m)</th>
-    </tr>
-  </thead>
-  <tbody>
-    {userClimateData.map((item, index) => (
-      <tr key={index} className="hover:bg-gray-100">
-        <td className="border p-2 text-black">{item.min_temp}</td>
-        <td className="border p-2 text-black">{item.max_temp}</td>
-        <td className="border p-2 text-black">{item.precipitation}</td>
-        <td className="border p-2 text-black">{item.humidity}</td>
-        <td className="border p-2 text-black">{item.wind}</td>
-        <td className="border p-2 text-black">{item.solar_radiation}</td>
-        <td className="border p-2 text-black">{item.vapor_pressure_deficit}</td>
-        <td className="border p-2 text-black">{item.reference_ET}</td>
-        <td className="border p-2 text-black">{item.elevation}</td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-
-    </div>
-  </>
-)}
-
-
-          {/* Soil Data Table */}
-          <h3 className="text-lg font-semibold mt-8 mb-2">Soil Data</h3>
+{/* Selected County Soil Data Table */}
+<h3 className="text-lg font-semibold mt-8 mb-2">Soil Data</h3>
           <div className="overflow-x-auto w-full">
             <table className="table-auto w-full text-sm border text-black">
               <thead>
@@ -529,6 +478,49 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
               </tbody>
             </table>
           </div>
+{/* Selected County Climate Data Table */}
+{climateData.length >= 0 && (
+  <>
+    <h3 className="text-lg font-semibold mt-8 mb-2">Climate Data for {selectedDate}</h3>
+    <div className="overflow-x-auto w-full">
+    <table className="table-auto w-full text-sm border text-black">
+  <thead>
+    <tr className="bg-gray-200">
+      <th className="border p-2 text-black">Min Temp (°C)</th>
+      <th className="border p-2 text-black">Max Temp (°C)</th>
+      <th className="border p-2 text-black">Precipitation (mm)</th>
+      <th className="border p-2 text-black">Humidity (%)</th>
+      <th className="border p-2 text-black">Wind (m/s)</th>
+      <th className="border p-2 text-black">Solar Radiation (W/m²)</th>
+      <th className="border p-2 text-black">Vapor Pressure Deficit (kPa)</th>
+      <th className="border p-2 text-black">Reference ET₀ (mm/day)</th>
+      <th className="border p-2 text-black">Elevation (m)</th>
+    </tr>
+  </thead>
+  <tbody>
+    {climateData.map((item, index) => (
+      <tr key={index} className="hover:bg-gray-100">
+        <td className="border p-2 text-black">{item.min_temp}</td>
+        <td className="border p-2 text-black">{item.max_temp}</td>
+        <td className="border p-2 text-black">{item.precipitation}</td>
+        <td className="border p-2 text-black">{item.humidity}</td>
+        <td className="border p-2 text-black">{item.wind}</td>
+        <td className="border p-2 text-black">{item.solar_radiation}</td>
+        <td className="border p-2 text-black">{item.vapor_pressure_deficit}</td>
+        <td className="border p-2 text-black">{item.reference_ET}</td>
+        <td className="border p-2 text-black">{item.elevation}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+
+    </div>
+  </>
+)}
+
+
+          
+          {/* Selected County Average Environmental Data */}
           {selectedAvgEnvData.length >= 0 && (
   <div className="flex flex-col bg-white p-8 m-4 rounded shadow-md text-black w-full items-center">
     <h2 className="text-2xl font-bold mb-4 text-center">Average Precipitation and pH Water by County</h2>
