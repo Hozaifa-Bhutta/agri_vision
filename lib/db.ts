@@ -1,4 +1,6 @@
+import { count } from 'console';
 import mysql from 'mysql2/promise';
+import bcrypt from 'bcrypt'; 
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || '34.122.161.108', // Use env var, default to localhost
@@ -33,40 +35,61 @@ export const query = async (sql: string, values: any[]): Promise<any[]> => {
   };
 
 // method to check if user exists and if password is correct
-export const checkUser = async (username: string, password: string) => {
-  try {
-    const sql = 'SELECT * FROM UserAccount WHERE username = ? AND password = ?';
-    const values = [username, password];
-    const rows = await query(sql, values);
-    return rows.length > 0; // Return true if user exists, false otherwise
 
-    } catch (err) {
-        console.error('Check user error:', err);
-        throw err; // Re-throw the error to be handled upstream
-    }
+export const checkUser = async (username: string, password: string) => {
+  const sql = 'SELECT * FROM UserAccount WHERE username = ?';
+  const result = await query(sql, [username]);
+
+  if (result.length === 0) {
+    return false; // no such user
+  }
+
+  const user = result[0];
+  const passwordMatch = await bcrypt.compare(password, user.password);
+
+  if (passwordMatch) {
+    // Return user object without the password
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  } else {
+    return false;
+  }
+};
+
+
+export const doesUserExist = async (username: string) => {
+  const sql = 'SELECT * FROM UserAccount WHERE username = ?';
+  const result = await query(sql, [username]);
+  return result.length > 0;
 }
 
 export const createUser = async (username: string, password: string, county_state: string) => {
   try {
     // first check if user exists
-    if (await checkUser(username, password)) {
+    if (await doesUserExist(username)) {
       throw new Error('User already exists');
     }
+    
+
+    // Hash the password before saving
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
     const sql = 'INSERT INTO UserAccount (username, password, county_state) VALUES (?, ?, ?)';
-    const values = [username, password, county_state];
+    const values = [username, hashedPassword, county_state];
     const result = await query(sql, values);
+
     return result; // Return the result of the insert operation
   } catch (err) {
     console.error('Create user error:', err);
     throw err; // Re-throw the error to be handled upstream
   }
-}
+};
 
 export const getCounties = async () => {
   try {
     const sql = 'SELECT * FROM Counties';
     const rows = await query(sql, []);
-    console.log(rows);
     return rows; // Return the result of the query
   } catch (err) {
     console.error('Get counties error:', err);
@@ -130,8 +153,7 @@ export const createYield = async (yieldData: {
       yieldData.username,
       yieldData.yieldacre
     ];
-    console.log('SQL:', sql);
-    console.log('Values:', values);
+
     const result = await query(sql, values);
     return {
       ...yieldData,
@@ -150,7 +172,6 @@ export const getAuditLogs = async (username: string, limit: number) => {
     
     // Use string concatenation for the LIMIT value
     const sql = `SELECT * FROM CropYield_AuditLog WHERE username = ? ORDER BY action_timestamp DESC LIMIT ${safeLimit}`;
-    console.log('SQL:', sql);
     const values = [username]; // Only username uses placeholder
     
     const rows = await query(sql, values);
@@ -163,27 +184,154 @@ export const getAuditLogs = async (username: string, limit: number) => {
 }
 
 
-export const deleteYieldById = async (
-  compositeId: { 
-    cropType: string, 
-    measurementDate: string, 
-    username: string, 
-    county_state: string 
-  }
-) => {
+export const updateUserEntry = async (yieldData: {
+  username: string,
+  county_state: string,
+  crop_type: string,
+  measurement_date: string,
+  yieldacre: number
+}) => {
   try {
-    const sql = 'DELETE FROM CropYield WHERE crop_type = ? AND measurement_date = ? AND username = ? AND county_state = ?';
+    const sql = 'UPDATE CropYield SET yieldacre = ? WHERE username = ? AND county_state = ? AND crop_type = ? AND measurement_date = ?';
     const values = [
-      compositeId.cropType,
-      compositeId.measurementDate,
-      compositeId.username,
-      compositeId.county_state
+      yieldData.yieldacre,
+      yieldData.username,
+      yieldData.county_state,
+      yieldData.crop_type,
+      yieldData.measurement_date
+    ];
+    
+    const result = await query(sql, values);
+    return result; // Return the result of the update operation
+  }
+  catch (err) {
+    console.error('Update yield error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+
+
+export const deleteUserEntry = async (yieldData: {
+  username: string,
+  crop_type: string,
+  measurement_date: string,
+  county_state: string
+}) => {
+  try {
+    const sql = 'DELETE FROM CropYield WHERE username = ? AND crop_type = ? AND measurement_date = ? AND county_state = ?';
+    const values = [
+      yieldData.username,
+      yieldData.crop_type,
+      yieldData.measurement_date,
+      yieldData.county_state
     ];
     
     const result = await query(sql, values);
     return result; // Return the result of the delete operation
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Delete yield error:', err);
     throw err; // Re-throw the error to be handled upstream
   }
 }
+
+export const getSoilData = async (county_state: string) => {
+  try {
+    const sql = 'SELECT * FROM Soil WHERE county_state = ?';
+    const values = [county_state];
+    const rows = await query(sql, values);
+    return rows; // Return the result of the query
+  } catch (err) {
+    console.error('Get soil data error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+export const getAvailableDates = async (county_state: string) => {
+  try {
+    const sql = 'SELECT DISTINCT measurement_date FROM Climate WHERE county_state = ?';
+    const values = [county_state];
+    const rows = await query(sql, values);
+    return rows; // Return the result of the query
+  } catch (err) {
+    console.error('Get available dates error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+export const getClimateData = async (county_state: string, measurement_date: string) => {
+  try {
+    const sql = 'SELECT * FROM Climate WHERE county_state = ? AND measurement_date = ?';
+    const values = [county_state, measurement_date];
+    const rows = await query(sql, values);
+    return rows; // Return the result of the query
+  } catch (err) {
+    console.error('Get climate data error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+export const cropAdvancedQuery = async (username: string) => {
+
+  try {
+    const sql = `SELECT 
+          CY.username,
+          CY.county_state,
+          AVG(CY.yieldacre) AS avg_yield,
+          AR.avg_precipitation
+      FROM 
+          CropYield CY
+      JOIN (
+          SELECT 
+              county_state,
+              AVG(precipitation) AS avg_precipitation
+          FROM 
+              Climate
+          GROUP BY 
+              county_state
+      ) AR ON CY.county_state = AR.county_state
+      WHERE 
+          CY.username = ?
+      GROUP BY 
+          CY.username, CY.county_state, AR.avg_precipitation;`;
+    const values = [username];
+    const rows = await query(sql, values);
+    return rows; // Return the result of the query
+  }
+  catch (err) {
+    console.error('Crop advanced query error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+
+export const getAvgEnvData = async (countyState: string) => {
+  try {
+    const sql_query = `
+      SELECT
+        Soil.county_state,
+        AVG(precipitation) AS avg_precipitation,
+        AVG(ph) AS avg_pH_water
+      FROM Soil
+      JOIN Climate ON Soil.county_state = Climate.county_state
+      WHERE Soil.county_state = Climate.county_state AND Soil.county_state = ?
+      GROUP BY Soil.county_state;
+    `;
+    const rows = await query(sql_query, [countyState]);
+    console.log('Average environmental data:', rows);
+    return rows; // Return the result of the query
+  } catch (err) {
+    console.error('Get average environmental data error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+}
+export const getAdminCropComparison = async (username: string, countyState: string) => {
+  try {
+    const sql_query = `CALL GetCropComparison(?, ?)`;
+    const rows = await query(sql_query, [username, countyState]);
+    // return first 2 rows
+    const firstTwoRows = rows.slice(0, 2);
+    // return the first two rows
+    return firstTwoRows;
+  } catch (err) {
+    console.error('GetCropComparison error:', err);
+    throw err;
+  }
+};
