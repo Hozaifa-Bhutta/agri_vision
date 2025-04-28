@@ -67,12 +67,18 @@ export const doesUserExist = async (username: string) => {
 
 export const createUser = async (username: string, password: string, county_state: string) => {
   // method to create a new user (and check if user already exists)
+  const connection = await pool.getConnection();
   try {
+    await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+    await connection.beginTransaction();
+    
     // first check if user exists
-    if (await doesUserExist(username)) {
+    const checkSql = 'SELECT * FROM UserAccount WHERE username = ?';
+    const [checkResult] = await connection.execute(checkSql, [username]);
+    
+    if ((checkResult as any[]).length > 0) {
       throw new Error('User already exists');
     }
-    
 
     // Hash the password before saving
     const saltRounds = 10;
@@ -80,14 +86,20 @@ export const createUser = async (username: string, password: string, county_stat
 
     const sql = 'INSERT INTO UserAccount (username, password, county_state) VALUES (?, ?, ?)';
     const values = [username, hashedPassword, county_state];
-    const result = await query(sql, values);
-
-    return result; 
+    const [result] = await connection.execute(sql, values);
+    
+    await connection.commit();
+    return result;
   } catch (err) {
+    await connection.rollback();
     console.error('Create user error:', err);
     throw err; 
+  } finally {
+    connection.release();
   }
 };
+
+
 
 export const getCounties = async () => {
   // method to get all counties
@@ -116,17 +128,25 @@ export const getUserInfo = async (username: string) => {
 
 export const updateUser = async (username: string, county_state: string) => {
   // method to update user info
+  const connection = await pool.getConnection();
   try {
+    await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+    await connection.beginTransaction();
+    
     const sql = 'UPDATE UserAccount SET county_state = ? WHERE username = ?';
     const values = [county_state, username];
-    const result = await query(sql, values);
-    return result; 
+    const [result] = await connection.execute(sql, values);
+    
+    await connection.commit();
+    return result;
   } catch (err) {
+    await connection.rollback();
     console.error('Update user error:', err);
     throw err; 
+  } finally {
+    connection.release();
   }
-}
-
+};
 
 
 export const getYieldsByUsername = async (username: string) => {
@@ -143,14 +163,16 @@ export const getYieldsByUsername = async (username: string) => {
 }
 
 export const createYield = async (yieldData: { 
-  // method to create a new yield record
   crop_type: string, 
   measurement_date: string, 
   yieldacre: number, 
-  username: string ,
+  username: string,
   county_state: string
 }) => {
+  const connection = await pool.getConnection();
   try {
+    await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+    await connection.beginTransaction();
 
     const sql = 'INSERT INTO CropYield (crop_type, measurement_date, county_state, username, yieldacre) VALUES (?, ?, ?, ?, ?)';
     const values = [
@@ -161,15 +183,20 @@ export const createYield = async (yieldData: {
       yieldData.yieldacre
     ];
 
-    const result = await query(sql, values);
+    const [result] = await connection.execute(sql, values);
+    
+    await connection.commit();
     return {
       ...yieldData,
-    }; 
+    };
   } catch (err) {
+    await connection.rollback();
     console.error('Create yield error:', err);
     throw err; 
+  } finally {
+    connection.release();
   }
-}
+};
 
 
 export const getAuditLogs = async (username: string, limit: number) => {
@@ -192,14 +219,17 @@ export const getAuditLogs = async (username: string, limit: number) => {
 
 
 export const updateUserEntry = async (yieldData: {
-  // method to update a yield record
   username: string,
   county_state: string,
   crop_type: string,
   measurement_date: string,
   yieldacre: number
 }) => {
+  const connection = await pool.getConnection();
   try {
+    await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+    await connection.beginTransaction();
+    
     const sql = 'UPDATE CropYield SET yieldacre = ? WHERE username = ? AND county_state = ? AND crop_type = ? AND measurement_date = ?';
     const values = [
       yieldData.yieldacre,
@@ -209,15 +239,19 @@ export const updateUserEntry = async (yieldData: {
       yieldData.measurement_date
     ];
     
-    const result = await query(sql, values);
-    return result; 
+    const [result] = await connection.execute(sql, values);
+    
+    await connection.commit();
+    return result;
   }
   catch (err) {
+    await connection.rollback();
     console.error('Update yield error:', err);
     throw err; 
+  } finally {
+    connection.release();
   }
-}
-
+};
 
 
 export const deleteUserEntry = async (yieldData: {
@@ -226,8 +260,11 @@ export const deleteUserEntry = async (yieldData: {
   measurement_date: string,
   county_state: string
 }) => {
-  // method to delete a yield record
+  const connection = await pool.getConnection();
   try {
+    await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+    await connection.beginTransaction();
+    
     const sql = 'DELETE FROM CropYield WHERE username = ? AND crop_type = ? AND measurement_date = ? AND county_state = ?';
     const values = [
       yieldData.username,
@@ -236,14 +273,19 @@ export const deleteUserEntry = async (yieldData: {
       yieldData.county_state
     ];
     
-    const result = await query(sql, values);
-    return result; 
+    const [result] = await connection.execute(sql, values);
+    
+    await connection.commit();
+    return result;
   }
   catch (err) {
+    await connection.rollback();
     console.error('Delete yield error:', err);
     throw err; 
+  } finally {
+    connection.release();
   }
-}
+};
 
 export const getSoilData = async (county_state: string) => {
   // method to get soil data for a specific county and state
@@ -361,17 +403,24 @@ export const getAvgEnvData = async (countyState: string) => {
 };
 
 export const getAdminCropComparison = async (username: string, countyState: string) => {
-  // method to get crop comparison data for a specific user and county/state
-  // this is a stored procedure that takes in a username and county/state
-  // the stored procedure contains 2 advanced queries
+  const connection = await pool.getConnection();
   try {
+    await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+    await connection.beginTransaction();
+    
     const sql_query = `CALL GetCropComparison(?, ?)`;
-    const rows = await query(sql_query, [username, countyState]);
+    const [rows] = await connection.execute(sql_query, [username, countyState]);
+    
     // return first 2 rows
-    const firstTwoRows = rows.slice(0, 2);
+    const firstTwoRows = (rows as any[]).slice(0, 2);
+    
+    await connection.commit();
     return firstTwoRows;
   } catch (err) {
+    await connection.rollback();
     console.error('GetCropComparison error:', err);
     throw err;
+  } finally {
+    connection.release();
   }
 };
