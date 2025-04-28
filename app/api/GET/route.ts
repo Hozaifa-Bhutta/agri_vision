@@ -129,16 +129,16 @@ export async function GET(req: NextRequest) {
       case 'cropAdminComparison' : {
         const username = searchParams.get('username');
         const countyState = searchParams.get('countyState');
-        console.log("username: ", username);
         if (!username || !countyState) {
           return NextResponse.json({ success: false, error: 'Username and county/state are required' }, { status: 400 });
         }
         console.log("about to call getAdminCropComparison");
         const result = await getAdminCropComparison(username, countyState);
+        console.log("result from getAdminCropComparison", result);
         if (!result) {
           return NextResponse.json({ success: false, error: 'Failed to fetch crop comparison data' }, { status: 500 });
         }
-        return NextResponse.json({ success: true, result: result[0] });
+        return NextResponse.json({ success: true, result: result });
       }
 
 
