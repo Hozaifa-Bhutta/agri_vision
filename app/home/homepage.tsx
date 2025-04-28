@@ -172,9 +172,9 @@ function HomePageContent() {
           />
         </div>
         
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <AboutWidget />
-        </div>
+        </div> */}
       </div>
     </div>
   );
