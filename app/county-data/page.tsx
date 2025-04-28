@@ -37,11 +37,13 @@ function CountyDataContent() {
 const [userAvailableDates, setUserAvailableDates] = useState<string[]>([]);
 const [userSelectedDate, setUserSelectedDate] = useState<string>("");
 const [userClimateData, setUserClimateData] = useState<any[]>([]);
+const [userAvgEnvData, setUserAvgEnvData] = useState<any[]>([]);
 
 // For selected county
 const [availableDates, setAvailableDates] = useState<string[]>([]);
 const [selectedDate, setSelectedDate] = useState<string>("");
 const [climateData, setClimateData] = useState<any[]>([]);
+const [selectedAvgEnvData, setSelectedAvgEnvData] = useState<any[]>([]);
 
 const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
 
@@ -170,7 +172,10 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     const res = await fetch(`/api/GET?action=getAvgEnvData&countyState=${encodeURIComponent(countyState)}`);
     const data = await res.json();
     console.log("Avg environmental data:", data.result);
-    setAvgEnvData(data.result || []);
+    if(countyState === county)
+      setUserAvgEnvData(data.result || []);
+    else
+      setSelectedAvgEnvData(data.result || []);
   } catch (error) {
     console.error("Failed to fetch avg environmental data:", error);
   }
@@ -183,8 +188,21 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     console.log("CountyDataPage: Pathname changed:", pathname);
     fetchCounties();
     fetchUserInfo();
-    fetchAvgEnvData(county);
   }, [pathname]);
+
+  useEffect(() => {
+    if(selectedCounty) {
+      console.log("Fetching average env data for selected county:", selectedCounty);
+      fetchAvgEnvData(selectedCounty);
+    }
+  }, [selectedCounty]);
+
+  useEffect(() => {
+    if (county) {
+      console.log("County is ready, fetching avg env data for count:", county);
+      fetchAvgEnvData(county);
+    }
+  }, [county]);
 
   // --- Navigation Functions ---
 
@@ -249,7 +267,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       </div>
 
       {/* Page Content */}
-      <div className="flex w-full h-full p-4">
+      <div className="flex w-full h-full p-4 items-start">
         {/* Left County Card */}
         <div className="flex flex-col flex-1 bg-white p-8 rounded shadow-md text-black opacity-100">
           <h2 className="text-2xl font-bold mb-4">
@@ -343,22 +361,22 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     ))}
   </tbody>
 </table>
-{avgEnvData.length >= 0 && (
+{userAvgEnvData.length >= 0 && (
   <div className="flex flex-col bg-white p-8 m-4 rounded shadow-md text-black w-full items-center">
     <h2 className="text-2xl font-bold mb-4 text-center">Average Precipitation and pH Water by County</h2>
     <div className="w-full max-w-[500px] h-[400px]">
       <Bar
         data={{
-          labels: avgEnvData.map(item => formatCountyName(item.county_state)),
+          labels: userAvgEnvData.map(item => formatCountyName(item.county_state)),
           datasets: [
             {
               label: 'Avg Precipitation (mm)',
-              data: avgEnvData.map(item => item.avg_precipitation),
+              data: userAvgEnvData.map(item => item.avg_precipitation),
               backgroundColor: 'rgba(54, 162, 235, 0.6)',
             },
             {
               label: 'Avg pH Water',
-              data: avgEnvData.map(item => item.avg_pH_water),
+              data: userAvgEnvData.map(item => item.avg_pH_water/10),
               backgroundColor: 'rgba(255, 206, 86, 0.6)',
             },
           ],
@@ -511,22 +529,22 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
               </tbody>
             </table>
           </div>
-          {avgEnvData.length >= 0 && (
+          {selectedAvgEnvData.length >= 0 && (
   <div className="flex flex-col bg-white p-8 m-4 rounded shadow-md text-black w-full items-center">
     <h2 className="text-2xl font-bold mb-4 text-center">Average Precipitation and pH Water by County</h2>
     <div className="w-full max-w-[500px] h-[400px]">
       <Bar
         data={{
-          labels: avgEnvData.map(item => formatCountyName(item.county_state)),
+          labels: selectedAvgEnvData.map(item => formatCountyName(item.county_state)),
           datasets: [
             {
               label: 'Avg Precipitation (mm)',
-              data: avgEnvData.map(item => item.avg_precipitation),
+              data: selectedAvgEnvData.map(item => item.avg_precipitation),
               backgroundColor: 'rgba(54, 162, 235, 0.6)',
             },
             {
               label: 'Avg pH Water',
-              data: avgEnvData.map(item => item.avg_pH_water),
+              data: selectedAvgEnvData.map(item => item.avg_pH_water/10),
               backgroundColor: 'rgba(255, 206, 86, 0.6)',
             },
           ],
