@@ -8,7 +8,6 @@ interface AuditLogWidgetProps {
 }
 
 const AuditLogWidget: React.FC<AuditLogWidgetProps> = ({ auditLogs, loading, formatDate }) => {
-  // Helper function to get the appropriate style and text for each action type
   const getActionStyle = (actionType: string) => {
     switch (actionType) {
       case 'INSERT':
@@ -47,9 +46,15 @@ const AuditLogWidget: React.FC<AuditLogWidgetProps> = ({ auditLogs, loading, for
           <p className="text-gray-700">No activity records found.</p>
         </div>
       ) : (
-        <div className="overflow-auto flex-grow" style={{ maxHeight: "calc(100% - 2rem)" }}>
+        <div 
+          className="overflow-auto flex-grow" 
+          style={{ 
+            height: "300px", // Fixed height that matches climate widget height
+            maxHeight: "calc(100% - 2rem)" 
+          }}
+        >
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0">
+            <thead className="bg-gray-50 sticky top-0 z-10">
               <tr>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Action
@@ -92,6 +97,9 @@ const AuditLogWidget: React.FC<AuditLogWidgetProps> = ({ auditLogs, loading, for
           </table>
         </div>
       )}
+      <div className="mt-2 text-xs text-gray-500 text-right">
+        Showing {auditLogs.length} activities
+      </div>
     </div>
   );
 };

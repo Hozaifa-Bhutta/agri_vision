@@ -26,18 +26,18 @@ export const fetchFarmingNews = async (countyState: string) => {
     const stateName = STATE_MAPPING[stateAbbreviation] || stateAbbreviation;
     
     const query = encodeURIComponent(`agriculture ${stateName}`);
-    const url = `https://gnews.io/api/v4/search?q=${query}&lang=en&max=3&apikey=${GNEWS_API_KEY}`;
+    const url = `https://gnews.io/api/v4/search?q=${query}&lang=en&max=6&sortby=publishedAt&apikey=${GNEWS_API_KEY}`;
     
     console.log(`Making news API request for state: ${stateName}`);
     console.log("Request URL:", url);
     
     // Rest of the function remains the same...
     const response = await axios.get(url);
-
+    // console.log("Response:", response.data.articles);
     if (!response.data.articles || response.data.articles.length === 0) {
       console.log("No articles found for query. Trying fallback query...");
 
-      const fallbackUrl = `https://gnews.io/api/v4/search?q=agriculture&lang=en&max=3&apikey=${GNEWS_API_KEY}`;
+      const fallbackUrl = `https://gnews.io/api/v4/search?q=agriculture&lang=en&max=6&sortby=publishedAt&apikey=${GNEWS_API_KEY}`;
       const fallbackResponse = await axios.get(fallbackUrl);
 
       if (fallbackResponse.data.articles && fallbackResponse.data.articles.length > 0) {
@@ -47,6 +47,8 @@ export const fetchFarmingNews = async (countyState: string) => {
           url: article.url,
           publishedAt: article.publishedAt,
           source: article.source.name,
+          image: article.image,
+          content: article.content,
         }));
       } else {
         return getMockFarmingNews();
@@ -59,6 +61,8 @@ export const fetchFarmingNews = async (countyState: string) => {
       url: article.url,
       publishedAt: article.publishedAt,
       source: article.source.name,
+      image: article.image,
+      content: article.content,
     }));
   } catch (error) {
     console.error('Error fetching farming news:', error);

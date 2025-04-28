@@ -64,7 +64,7 @@ function HomePageContent() {
     const fetchAuditLogs = async () => {
       try {
         setLogsLoading(true);
-        const response = await fetch(`/api/GET?action=getAuditLogs&username=${username}&limit=10`);
+        const response = await fetch(`/api/GET?action=getAuditLogs&username=${username}&limit=20`);
         
         if (response.ok) {
           const data = (await response.json()).result;
@@ -146,16 +146,16 @@ function HomePageContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <UserProfileWidget 
+            {/* <UserProfileWidget 
               username={userInfo?.username || username} 
               location={userInfo?.county_state}
               formatLocation={formatLocation}
-            />
+            /> */}
             <ClimateWidget 
               county_state={userInfo?.county_state} 
               formatLocation={formatLocation}
             />
-            <YieldsWidget />
+            {/* <YieldsWidget /> */}
             <AuditLogWidget 
               auditLogs={auditLogs} 
               loading={logsLoading} 
@@ -172,9 +172,9 @@ function HomePageContent() {
           />
         </div>
         
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <AboutWidget />
-        </div>
+        </div> */}
       </div>
     </div>
   );
