@@ -37,11 +37,13 @@ function CountyDataContent() {
 const [userAvailableDates, setUserAvailableDates] = useState<string[]>([]);
 const [userSelectedDate, setUserSelectedDate] = useState<string>("");
 const [userClimateData, setUserClimateData] = useState<any[]>([]);
+const [userAvgEnvData, setUserAvgEnvData] = useState<any[]>([]);
 
 // For selected county
 const [availableDates, setAvailableDates] = useState<string[]>([]);
 const [selectedDate, setSelectedDate] = useState<string>("");
 const [climateData, setClimateData] = useState<any[]>([]);
+const [selectedAvgEnvData, setSelectedAvgEnvData] = useState<any[]>([]);
 
 const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
 
@@ -76,9 +78,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       const res = await fetch(`/api/GET?action=getUserInfo&username=${username}`);
       if (!res.ok) throw new Error('Failed to fetch user info');
       const data = (await res.json()).result;
-      console.log("Fetched user county:", data.county_state);
       setCounty(data.county_state);
-      console.log("Fetched user info:", data);
       fetchUserCountyData(data.county_state);
     } catch (e: any) {
       console.error(e.message);
@@ -93,7 +93,6 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       
       const datesRes = await fetch(`/api/GET?action=getAvailableDates&countyState=${encodeURIComponent(countyState)}`);
       const datesData = await datesRes.json();
-      console.log("Raw dates from API:", datesData.result);
       
       // Extract measurement_date property from each object
       const dateStrings = datesData.result.map((dateObj: any) => 
@@ -105,7 +104,6 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       // Remove duplicates if any
       const uniqueDates = [...new Set(dateStrings)];
       
-      console.log("Processed dates:", uniqueDates);
       setUserAvailableDates(uniqueDates);
       
       setUserSelectedDate(""); // reset old selection
@@ -137,7 +135,6 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       // Remove duplicates if any
       const uniqueDates = [...new Set(dateStrings)];
       
-      console.log("Processed dates for selected county:", uniqueDates);
       setAvailableDates(uniqueDates as string[]);
       
       setSelectedDate(""); // Reset the selected date
@@ -151,6 +148,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     try {
       const climateRes = await fetch(`/api/GET?action=getClimateData&countyState=${encodeURIComponent(countyState)}&measurementDate=${encodeURIComponent(date)}`);
       const climateDataJson = await climateRes.json();
+      console.log("Climate data for selected county:", climateDataJson.result);
       setClimateData(climateDataJson.result || []);
     } catch (error) {
       console.error("Failed to fetch climate data:", error);
@@ -166,11 +164,18 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     }
   };
 
-  const fetchAvgEnvData = async () => {
+  const fetchAvgEnvData = async (countyState: string) => {
   try {
-    const res = await fetch(`/api/GET?action=getAvgEnvData`);  // Assuming your backend has this ready
+    // todo: pass in the county state (right now that doesn't work because countyState is null for some reason)
+    console.log("Fetching average environmental data");
+    console.log("County state for avg env data:", countyState);
+    const res = await fetch(`/api/GET?action=getAvgEnvData&countyState=${encodeURIComponent(countyState)}`);
     const data = await res.json();
-    setAvgEnvData(data.result || []);
+    console.log("Avg environmental data:", data.result);
+    if(countyState === county)
+      setUserAvgEnvData(data.result || []);
+    else
+      setSelectedAvgEnvData(data.result || []);
   } catch (error) {
     console.error("Failed to fetch avg environmental data:", error);
   }
@@ -183,8 +188,21 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     console.log("CountyDataPage: Pathname changed:", pathname);
     fetchCounties();
     fetchUserInfo();
-    fetchAvgEnvData();
   }, [pathname]);
+
+  useEffect(() => {
+    if(selectedCounty) {
+      console.log("Fetching average env data for selected county:", selectedCounty);
+      fetchAvgEnvData(selectedCounty);
+    }
+  }, [selectedCounty]);
+
+  useEffect(() => {
+    if (county) {
+      console.log("County is ready, fetching avg env data for count:", county);
+      fetchAvgEnvData(county);
+    }
+  }, [county]);
 
   // --- Navigation Functions ---
 
@@ -249,7 +267,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       </div>
 
       {/* Page Content */}
-      <div className="flex w-full h-full p-4">
+      <div className="flex w-full h-full p-4 items-start">
         {/* Left County Card */}
         <div className="flex flex-col flex-1 bg-white p-8 rounded shadow-md text-black opacity-100">
           <h2 className="text-2xl font-bold mb-4">
@@ -343,22 +361,22 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     ))}
   </tbody>
 </table>
-{avgEnvData.length >= 0 && (
+{userAvgEnvData.length >= 0 && (
   <div className="flex flex-col bg-white p-8 m-4 rounded shadow-md text-black w-full items-center">
     <h2 className="text-2xl font-bold mb-4 text-center">Average Precipitation and pH Water by County</h2>
     <div className="w-full max-w-[500px] h-[400px]">
       <Bar
         data={{
-          labels: avgEnvData.map(item => formatCountyName(item.county_state)),
+          labels: userAvgEnvData.map(item => formatCountyName(item.county_state)),
           datasets: [
             {
               label: 'Avg Precipitation (mm)',
-              data: avgEnvData.map(item => item.avg_precipitation),
+              data: userAvgEnvData.map(item => item.avg_precipitation),
               backgroundColor: 'rgba(54, 162, 235, 0.6)',
             },
             {
               label: 'Avg pH Water',
-              data: avgEnvData.map(item => item.avg_pH_water),
+              data: userAvgEnvData.map(item => item.avg_pH_water/10),
               backgroundColor: 'rgba(255, 206, 86, 0.6)',
             },
           ],
@@ -511,22 +529,22 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
               </tbody>
             </table>
           </div>
-          {avgEnvData.length >= 0 && (
+          {selectedAvgEnvData.length >= 0 && (
   <div className="flex flex-col bg-white p-8 m-4 rounded shadow-md text-black w-full items-center">
     <h2 className="text-2xl font-bold mb-4 text-center">Average Precipitation and pH Water by County</h2>
     <div className="w-full max-w-[500px] h-[400px]">
       <Bar
         data={{
-          labels: avgEnvData.map(item => formatCountyName(item.county_state)),
+          labels: selectedAvgEnvData.map(item => formatCountyName(item.county_state)),
           datasets: [
             {
               label: 'Avg Precipitation (mm)',
-              data: avgEnvData.map(item => item.avg_precipitation),
+              data: selectedAvgEnvData.map(item => item.avg_precipitation),
               backgroundColor: 'rgba(54, 162, 235, 0.6)',
             },
             {
               label: 'Avg pH Water',
-              data: avgEnvData.map(item => item.avg_pH_water),
+              data: selectedAvgEnvData.map(item => item.avg_pH_water/10),
               backgroundColor: 'rgba(255, 206, 86, 0.6)',
             },
           ],
