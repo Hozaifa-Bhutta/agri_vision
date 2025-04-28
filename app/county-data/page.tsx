@@ -76,9 +76,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       const res = await fetch(`/api/GET?action=getUserInfo&username=${username}`);
       if (!res.ok) throw new Error('Failed to fetch user info');
       const data = (await res.json()).result;
-      console.log("Fetched user county:", data.county_state);
       setCounty(data.county_state);
-      console.log("Fetched user info:", data);
       fetchUserCountyData(data.county_state);
     } catch (e: any) {
       console.error(e.message);
@@ -93,7 +91,6 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       
       const datesRes = await fetch(`/api/GET?action=getAvailableDates&countyState=${encodeURIComponent(countyState)}`);
       const datesData = await datesRes.json();
-      console.log("Raw dates from API:", datesData.result);
       
       // Extract measurement_date property from each object
       const dateStrings = datesData.result.map((dateObj: any) => 
@@ -105,7 +102,6 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       // Remove duplicates if any
       const uniqueDates = [...new Set(dateStrings)];
       
-      console.log("Processed dates:", uniqueDates);
       setUserAvailableDates(uniqueDates);
       
       setUserSelectedDate(""); // reset old selection
@@ -137,7 +133,6 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
       // Remove duplicates if any
       const uniqueDates = [...new Set(dateStrings)];
       
-      console.log("Processed dates for selected county:", uniqueDates);
       setAvailableDates(uniqueDates as string[]);
       
       setSelectedDate(""); // Reset the selected date
@@ -167,10 +162,12 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     }
   };
 
-  const fetchAvgEnvData = async () => {
+  const fetchAvgEnvData = async (countyState: string) => {
   try {
+    // todo: pass in the county state (right now that doesn't work because countyState is null for some reason)
     console.log("Fetching average environmental data");
-    const res = await fetch(`/api/GET?action=getAvgEnvData`);  // Assuming your backend has this ready
+    console.log("County state for avg env data:", countyState);
+    const res = await fetch(`/api/GET?action=getAvgEnvData&countyState=${encodeURIComponent(countyState)}`);
     const data = await res.json();
     console.log("Avg environmental data:", data.result);
     setAvgEnvData(data.result || []);
@@ -186,7 +183,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     console.log("CountyDataPage: Pathname changed:", pathname);
     fetchCounties();
     fetchUserInfo();
-    fetchAvgEnvData();
+    fetchAvgEnvData(county);
   }, [pathname]);
 
   // --- Navigation Functions ---

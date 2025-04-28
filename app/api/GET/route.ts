@@ -83,7 +83,6 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ success: false, error: 'County and state are required' }, { status: 400 });
         }
         const dates = await getAvailableDates(countyState);
-        console.log('Available dates:', dates);
         return NextResponse.json({ success: true, result: dates });
       }
       case 'getClimateData': {
@@ -120,7 +119,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ success: true, result: result });
       }
       case 'getAvgEnvData': {
-        const result = await getAvgEnvData();
+        console.log("getAvgEnvData");
+        const countyState = searchParams.get('countyState');
+        console.log("countyState", countyState);
+        if (!countyState) {
+          return NextResponse.json({ success: false, error: 'County and state are required' }, { status: 400 });
+        }
+        console.log("about to call getAvgEnvData");
+        const result = await getAvgEnvData(countyState);
         if (!result) {
           return NextResponse.json({ success: false, error: 'Failed to fetch average environmental data' }, { status: 500 });
         }
@@ -132,9 +138,7 @@ export async function GET(req: NextRequest) {
         if (!username || !countyState) {
           return NextResponse.json({ success: false, error: 'Username and county/state are required' }, { status: 400 });
         }
-        console.log("about to call getAdminCropComparison");
         const result = await getAdminCropComparison(username, countyState);
-        console.log("result from getAdminCropComparison", result);
         if (!result) {
           return NextResponse.json({ success: false, error: 'Failed to fetch crop comparison data' }, { status: 500 });
         }

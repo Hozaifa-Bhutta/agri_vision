@@ -302,7 +302,7 @@ export const cropAdvancedQuery = async (username: string) => {
   }
 }
 
-export const getAvgEnvData = async () => {
+export const getAvgEnvData = async (countyState: string) => {
   try {
     const sql_query = `
       SELECT
@@ -311,10 +311,11 @@ export const getAvgEnvData = async () => {
         AVG(ph) AS avg_pH_water
       FROM Soil
       JOIN Climate ON Soil.county_state = Climate.county_state
-      WHERE Soil.county_state = Climate.county_state
+      WHERE Soil.county_state = Climate.county_state AND Soil.county_state = ?
       GROUP BY Soil.county_state;
     `;
-    const rows = await query(sql_query, []);
+    const rows = await query(sql_query, [countyState]);
+    console.log('Average environmental data:', rows);
     return rows; // Return the result of the query
   } catch (err) {
     console.error('Get average environmental data error:', err);
