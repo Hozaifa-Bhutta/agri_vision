@@ -203,14 +203,18 @@ function CropYieldContent() {
       if (!res.ok) throw new Error('Failed to fetch admin comparison');
   
       const data = await res.json();
-      console.log("admin comparison data: ", data.result);
+      console.log("FULL admin API response: ", data);
+      console.log("Result field only: ", data.result);
   
       if (res.ok) {
         const result = data.result;
         if (result) {
           const adminPoints: YieldRecord[] = [];
   
-          result.forEach((item: any) => {
+          // 🔥 FIX: Flatten the nested arrays
+          const flattenedResult = result.flat(); // 👈 KEY LINE!
+  
+          flattenedResult.forEach((item: any) => {
             adminPoints.push({
               username: username,
               county_state: county,
@@ -227,7 +231,7 @@ function CropYieldContent() {
             });
           });
   
-          // ✅ Append to yields
+          // Append to yields
           setYields(prev => [...prev, ...adminPoints]);
         }
       }
