@@ -211,8 +211,7 @@ function CropYieldContent() {
         if (result) {
           const adminPoints: YieldRecord[] = [];
   
-          // 🔥 FIX: Flatten the nested arrays
-          const flattenedResult = result.flat(); // 👈 KEY LINE!
+          const flattenedResult = result.flat();
   
           flattenedResult.forEach((item: any) => {
             adminPoints.push({
@@ -231,7 +230,6 @@ function CropYieldContent() {
             });
           });
   
-          // Append to yields
           setYields(prev => [...prev, ...adminPoints]);
         }
       }
@@ -241,7 +239,6 @@ function CropYieldContent() {
   };
 
   const sortedYields = [...yields].sort((a, b) => {
-    // Special sort: treat User Average and Admin Average specially
     if (a.measurement_date.includes("Average") && !b.measurement_date.includes("Average")) return 1;
     if (!a.measurement_date.includes("Average") && b.measurement_date.includes("Average")) return -1;
     return a.measurement_date.localeCompare(b.measurement_date);
@@ -309,7 +306,6 @@ function CropYieldContent() {
             </div>
           </form>
   
-          {/* NEW Stylish See Average Display */}
           {averageData && (
             <div className="bg-purple-100 p-6 rounded-lg shadow-md mb-6 relative">
               <button
@@ -319,8 +315,8 @@ function CropYieldContent() {
                 Exit
               </button>
               <h2 className="text-2xl font-semibold text-purple-800 mb-2">Your County Averages</h2>
-              <p className="text-lg text-purple-700">Average Yield: <span className="font-bold">{averageData.avg_yield}</span></p>
-              <p className="text-lg text-purple-700">Average Precipitation: <span className="font-bold">{averageData.avg_precipitation}</span></p>
+              <p className="text-lg text-purple-700">Average Yield: <span className="font-bold">{averageData.avg_yield} bu/acre</span></p>
+              <p className="text-lg text-purple-700">Average Precipitation: <span className="font-bold">{averageData.avg_precipitation} mm</span></p>
             </div>
           )}
   
