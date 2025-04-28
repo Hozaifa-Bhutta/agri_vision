@@ -29,9 +29,7 @@ function CropYieldContent() {
   const [error, setError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  useEffect(() => { setIsMounted(true); }, []);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -53,25 +51,15 @@ function CropYieldContent() {
     setYields(data);
   };
 
-  useEffect(() => {
-    fetchYields();
-  }, [username]);
+  useEffect(() => { fetchYields(); }, [username]);
 
-  const goToProfile = () => {
-    router.push(`/profile?username=${username}`);
-  };
+  const goToProfile = () => { router.push(`/profile?username=${username}`); };
 
-  const handleLogout = () => {
-    router.push('/');
-  };
+  const handleLogout = () => { router.push('/'); };
 
   const handleEdit = async (item: YieldRecord) => {
     const newYieldAmount = prompt(`Enter new yield amount for ${item.crop_type} (${item.measurement_date}):`, item.yieldacre.toString());
-
-    if (newYieldAmount === null) {
-      return;
-    }
-
+    if (newYieldAmount === null) return;
     if (isNaN(Number(newYieldAmount)) || Number(newYieldAmount) <= 0) {
       alert("Please enter a valid positive number.");
       return;
@@ -175,6 +163,59 @@ function CropYieldContent() {
     }
   };
 
+  const handleSeeAverage = async () => {
+    try {
+      const res = await fetch(`/api/GET?action=cropAdvancedQuery&username=${username}`);
+      if (!res.ok) throw new Error('Failed to fetch averages');
+  
+      const data = await res.json();
+      console.log("advanced data: ", data);
+  
+      if (res.ok) {
+        const match = data.result.find((item: any) => item.county_state?.toLowerCase() === county.toLowerCase());
+  
+        if (match) {
+          alert(`Average Yield: ${match.avg_yield}\nAverage Precipitation: ${match.avg_precipitation}`);
+        } else {
+          alert("No matching county found.");
+        }
+      } else {
+        alert("Failed to fetch averages.");
+      }
+    } catch (error) {
+      alert("An unexpected error occurred while fetching averages.");
+      console.error(error);
+    }
+  };
+
+  const handleAdminComparison = async () => {
+    try {
+      console.log("about to call admin comparison");
+      const res = await fetch(`/api/GET?action=cropAdminComparison&username=${username}&countyState=${county}`);
+      if (!res.ok) throw new Error('Failed to fetch admin comparison');
+  
+      const data = await res.json();
+      console.log("admin comparison data: ", data.result);
+  
+      if (res.ok) {
+        const result = data.result;
+        if (result) {
+          alert(`User Average Yield: ${result.user_avg_yield}\nAdministrator Average Yield: ${result.admin_avg_yield}`);
+        } else {
+          alert("No comparison data found.");
+        }
+      } else {
+        alert("Failed to fetch comparison.");
+      }
+    } catch (error) {
+      alert("An unexpected error occurred while fetching admin comparison.");
+      console.error(error);
+    }
+  };
+
+  const sortedYields = [...yields].sort((a, b) => a.measurement_date.localeCompare(b.measurement_date));
+  const uniqueCrops = Array.from(new Set(sortedYields.map(y => y.crop_type)));
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 text-black">
       <div className="bg-green-500 p-4 flex items-center justify-between">
@@ -229,9 +270,11 @@ function CropYieldContent() {
               onChange={(e) => setNewYield({ ...newYield, yieldacre: e.target.value })}
             />
 
-            <button type="submit" className="col-span-3 bg-blue-500 text-white px-4 py-2 rounded">
-              Save Yield
-            </button>
+            <div className="col-span-3 flex space-x-4">
+              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Save Yield</button>
+              <button type="button" onClick={handleSeeAverage} className="bg-purple-500 text-white px-4 py-2 rounded">See Average</button>
+              <button type="button" onClick={handleAdminComparison} className="bg-indigo-500 text-white px-4 py-2 rounded">Admin?</button>
+            </div>
           </form>
 
           <h2 className="text-xl font-semibold mb-2">Yield History</h2>
@@ -246,25 +289,15 @@ function CropYieldContent() {
               </tr>
             </thead>
             <tbody>
-              {yields.map((item, index) => (
+              {sortedYields.map((item, index) => (
                 <tr key={index}>
                   <td className="border p-2 text-black">{item.crop_type}</td>
                   <td className="border p-2 text-black">{item.measurement_date}</td>
                   <td className="border p-2 text-black">{item.yieldacre}</td>
                   <td className="border p-2 text-black">{item.county_state}</td>
                   <td className="border p-2 flex space-x-2">
-                    <button
-                      className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-1 px-2 rounded"
-                      onClick={() => handleEdit(item)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded"
-                      onClick={() => handleDelete(item)}
-                    >
-                      Delete
-                    </button>
+                    <button onClick={() => handleEdit(item)} className="bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-1 px-2 rounded">Edit</button>
+                    <button onClick={() => handleDelete(item)} className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded">Delete</button>
                   </td>
                 </tr>
               ))}
@@ -273,12 +306,20 @@ function CropYieldContent() {
 
           <h2 className="text-xl font-semibold mb-2">Yield Over Time</h2>
           {isMounted ? (
-            <LineChart width={600} height={300} data={yields}>
+            <LineChart width={600} height={300} data={sortedYields}>
               <CartesianGrid stroke="#ccc" />
               <XAxis dataKey="measurement_date" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="yieldacre" stroke="#8884d8" />
+              {uniqueCrops.map((crop) => (
+                <Line
+                  key={crop}
+                  type="monotone"
+                  dataKey={(d: any) => d.crop_type === crop ? d.yieldacre : null}
+                  name={crop}
+                  connectNulls
+                />
+              ))}
             </LineChart>
           ) : (
             <div className="w-[600px] h-[300px] bg-gray-100 flex items-center justify-center">

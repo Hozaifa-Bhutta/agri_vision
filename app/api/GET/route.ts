@@ -3,10 +3,19 @@ import {
   getCounties,
   getUserInfo,
   getYieldsByUsername,
-  getAuditLogs
+  getAuditLogs,
+  getSoilData,
+  getAvailableDates,
+  getClimateData,
+  checkUser,
+  cropAdvancedQuery,
+  getAvgEnvData,
+  getAdminCropComparison,
 } from '@/lib/db';
 import { fetchWeatherLast7Days } from '@/lib/weather';
 import {fetchFarmingNews} from '@/lib/farmingNews';
+import { get } from 'http';
+import { count } from 'console';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -60,6 +69,83 @@ export async function GET(req: NextRequest) {
         const newsData = await fetchFarmingNews(countyState);
         return NextResponse.json({ success: true, result: newsData });
       }
+      case `getSoilData` : {
+        const countyState = searchParams.get('countyState');
+        if (!countyState) {
+          return NextResponse.json({ success: false, error: 'County and state are required' }, { status: 400 });
+        }
+        const soilData = await getSoilData(countyState);
+        return NextResponse.json({ success: true, result: soilData });
+      }
+      case 'getAvailableDates': {
+        const countyState = searchParams.get('countyState');
+        if (!countyState) {
+          return NextResponse.json({ success: false, error: 'County and state are required' }, { status: 400 });
+        }
+        const dates = await getAvailableDates(countyState);
+        return NextResponse.json({ success: true, result: dates });
+      }
+      case 'getClimateData': {
+        const countyState = searchParams.get('countyState');
+        const measurementDate = searchParams.get('measurementDate');
+        if (!countyState || !measurementDate) {
+          return NextResponse.json({ success: false, error: 'County/state and measurement date are required' }, { status: 400 });
+        }
+        const climateData = await getClimateData(countyState, measurementDate);
+        return NextResponse.json({ success: true, result: climateData });
+      }
+      case 'checkUser': {
+        const username = searchParams.get('username');
+        const password = searchParams.get('password');
+        if (!username || !password) {
+          return NextResponse.json({ success: false, error: 'Username and password are required' }, { status: 400 });
+        }
+        const result = await checkUser(username, password);
+        if (result) {
+          return NextResponse.json({ success: true, result });
+        } else {
+          return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
+        }
+      }
+      case 'cropAdvancedQuery': {
+        const username = searchParams.get('username');
+        if (!username) {
+          return NextResponse.json({ success: false, error: 'Username is required' }, { status: 400 });
+        }
+        const result = await cropAdvancedQuery(username);
+        if (!result) {
+          return NextResponse.json({ success: false, error: 'Failed to fetch crop data' }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, result: result });
+      }
+      case 'getAvgEnvData': {
+        console.log("getAvgEnvData");
+        const countyState = searchParams.get('countyState');
+        console.log("countyState", countyState);
+        if (!countyState) {
+          return NextResponse.json({ success: false, error: 'County and state are required' }, { status: 400 });
+        }
+        console.log("about to call getAvgEnvData");
+        const result = await getAvgEnvData(countyState);
+        if (!result) {
+          return NextResponse.json({ success: false, error: 'Failed to fetch average environmental data' }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, result: result });
+      }
+      case 'cropAdminComparison' : {
+        const username = searchParams.get('username');
+        const countyState = searchParams.get('countyState');
+        if (!username || !countyState) {
+          return NextResponse.json({ success: false, error: 'Username and county/state are required' }, { status: 400 });
+        }
+        const result = await getAdminCropComparison(username, countyState);
+        if (!result) {
+          return NextResponse.json({ success: false, error: 'Failed to fetch crop comparison data' }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, result: result });
+      }
+
+
 
       default:
         return NextResponse.json({ success: false, error: 'Unknown GET action' }, { status: 400 });

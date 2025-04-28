@@ -6,6 +6,7 @@ import {
   createYield,
   updateUserEntry,
   deleteUserEntry,
+  cropAdvancedQuery,
 } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
@@ -14,10 +15,30 @@ export async function POST(req: NextRequest) {
     const { action, params } = body;
 
     switch (action) {
-      case 'checkUser': {
+      case 'login': {
         const { username, password } = params;
-        const result = await checkUser(username, password);
-        return NextResponse.json({ success: true, result });
+        if (!username || !password) {
+          return NextResponse.json(
+            { success: false, error: 'Username and password are required' },
+            { status: 400 }
+          );
+        }
+        
+        const user = await checkUser(username, password);
+        if (!user || typeof user !== 'object' || !user.username || !user.county_state) {
+          return NextResponse.json(
+            { success: false, error: 'Invalid credentials' },
+            { status: 401 }
+          );
+        }
+        
+        return NextResponse.json({ 
+          success: true, 
+          user: { 
+            username: user.username,
+            county_state: user.county_state 
+          }
+        });
       }
 
       case 'createUser': {
@@ -66,6 +87,8 @@ export async function POST(req: NextRequest) {
         }
         return NextResponse.json({ success: true, message: 'Yield deleted successfully' });
       }
+     
+
 
       default:
         return NextResponse.json({ success: false, error: 'Unknown POST action' }, { status: 400 });

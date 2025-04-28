@@ -18,7 +18,7 @@ export const fetchWeatherLast7Days = async (countyState: string) => {
       wind: day.windspeed,
       solar_radiation: day.solarradiation
     }));
-
+    console.log('Weather data fetched successfully:', weatherData);
     return weatherData;
 
   } catch (error) {
