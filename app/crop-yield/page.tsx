@@ -28,6 +28,8 @@ function CropYieldContent() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [averageData, setAverageData] = useState<{ avg_yield: number, avg_precipitation: number } | null>(null);
+  
 
   useEffect(() => { setIsMounted(true); }, []);
 
@@ -175,22 +177,28 @@ function CropYieldContent() {
         const match = data.result.find((item: any) => item.county_state?.toLowerCase() === county.toLowerCase());
   
         if (match) {
-          alert(`Average Yield: ${match.avg_yield}\nAverage Precipitation: ${match.avg_precipitation}`);
+          setAverageData({
+            avg_yield: match.avg_yield,
+            avg_precipitation: match.avg_precipitation
+          });
         } else {
-          alert("No matching county found.");
+          setAverageData(null);
         }
       } else {
-        alert("Failed to fetch averages.");
+        setAverageData(null);
       }
     } catch (error) {
-      alert("An unexpected error occurred while fetching averages.");
       console.error(error);
+      setAverageData(null);
     }
+  };
+
+  const handleExitAverage = () => {
+    setAverageData(null);
   };
 
   const handleAdminComparison = async () => {
     try {
-      console.log("about to call admin comparison");
       const res = await fetch(`/api/GET?action=cropAdminComparison&username=${username}&countyState=${county}`);
       if (!res.ok) throw new Error('Failed to fetch admin comparison');
   
@@ -200,20 +208,40 @@ function CropYieldContent() {
       if (res.ok) {
         const result = data.result;
         if (result) {
-          alert(`User Average Yield: ${result.user_avg_yield}\nAdministrator Average Yield: ${result.admin_avg_yield}`);
-        } else {
-          alert("No comparison data found.");
+          const adminPoints: YieldRecord[] = [];
+  
+          result.forEach((item: any) => {
+            adminPoints.push({
+              username: username,
+              county_state: county,
+              crop_type: item.crop_type,
+              measurement_date: "User Average",
+              yieldacre: item.user_avg_yield,
+            });
+            adminPoints.push({
+              username: "ADMINISTRATOR",
+              county_state: county,
+              crop_type: item.crop_type,
+              measurement_date: "Admin Average",
+              yieldacre: item.admin_avg_yield,
+            });
+          });
+  
+          // ✅ Append to yields
+          setYields(prev => [...prev, ...adminPoints]);
         }
-      } else {
-        alert("Failed to fetch comparison.");
       }
     } catch (error) {
-      alert("An unexpected error occurred while fetching admin comparison.");
-      console.error(error);
+      console.error("Error fetching admin comparison: ", error);
     }
   };
 
-  const sortedYields = [...yields].sort((a, b) => a.measurement_date.localeCompare(b.measurement_date));
+  const sortedYields = [...yields].sort((a, b) => {
+    // Special sort: treat User Average and Admin Average specially
+    if (a.measurement_date.includes("Average") && !b.measurement_date.includes("Average")) return 1;
+    if (!a.measurement_date.includes("Average") && b.measurement_date.includes("Average")) return -1;
+    return a.measurement_date.localeCompare(b.measurement_date);
+  });
   const uniqueCrops = Array.from(new Set(sortedYields.map(y => y.crop_type)));
 
   return (
@@ -230,17 +258,17 @@ function CropYieldContent() {
           <button onClick={handleLogout} className="text-white hover:text-gray-200">Logout</button>
         </div>
       </div>
-
+  
       <div className="flex items-center justify-center flex-grow">
         <div className="bg-white p-8 rounded shadow-md w-full max-w-4xl text-black">
           <h1 className="text-2xl font-bold mb-4">Crop Yield Page</h1>
           <p className="mb-6">County: <strong>{county}</strong></p>
-
+  
           <h2 className="text-xl font-semibold mb-2">Add New Yield</h2>
-
+  
           {message && <div className="mb-2 text-green-600 font-semibold">{message}</div>}
           {error && <div className="mb-2 text-red-600 font-semibold">{error}</div>}
-
+  
           <form onSubmit={handleSubmit} className="grid grid-cols-3 gap-4 mb-6">
             <select
               required
@@ -252,7 +280,7 @@ function CropYieldContent() {
               <option value="corn">Corn</option>
               <option value="soybeans">Soybeans</option>
             </select>
-
+  
             <input
               type="month"
               required
@@ -260,7 +288,7 @@ function CropYieldContent() {
               value={newYield.measurement_date}
               onChange={(e) => setNewYield({ ...newYield, measurement_date: e.target.value })}
             />
-
+  
             <input
               type="number"
               placeholder="Yield per Acre"
@@ -269,14 +297,29 @@ function CropYieldContent() {
               value={newYield.yieldacre}
               onChange={(e) => setNewYield({ ...newYield, yieldacre: e.target.value })}
             />
-
+  
             <div className="col-span-3 flex space-x-4">
               <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">Save Yield</button>
               <button type="button" onClick={handleSeeAverage} className="bg-purple-500 text-white px-4 py-2 rounded">See Average</button>
               <button type="button" onClick={handleAdminComparison} className="bg-indigo-500 text-white px-4 py-2 rounded">Admin?</button>
             </div>
           </form>
-
+  
+          {/* NEW Stylish See Average Display */}
+          {averageData && (
+            <div className="bg-purple-100 p-6 rounded-lg shadow-md mb-6 relative">
+              <button
+                onClick={handleExitAverage}
+                className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full px-2 py-1 text-xs"
+              >
+                Exit
+              </button>
+              <h2 className="text-2xl font-semibold text-purple-800 mb-2">Your County Averages</h2>
+              <p className="text-lg text-purple-700">Average Yield: <span className="font-bold">{averageData.avg_yield}</span></p>
+              <p className="text-lg text-purple-700">Average Precipitation: <span className="font-bold">{averageData.avg_precipitation}</span></p>
+            </div>
+          )}
+  
           <h2 className="text-xl font-semibold mb-2">Yield History</h2>
           <table className="w-full text-left border-collapse border border-gray-300 mb-6">
             <thead className="bg-gray-200">
@@ -303,7 +346,7 @@ function CropYieldContent() {
               ))}
             </tbody>
           </table>
-
+  
           <h2 className="text-xl font-semibold mb-2">Yield Over Time</h2>
           {isMounted ? (
             <LineChart width={600} height={300} data={sortedYields}>
