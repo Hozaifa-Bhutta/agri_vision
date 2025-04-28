@@ -190,11 +190,12 @@ function CropYieldContent() {
 
   const handleAdminComparison = async () => {
     try {
-      const res = await fetch(`/api/GET?action=cropAdminComparison&username=${username}&county_state=${county}`);
+      console.log("about to call admin comparison");
+      const res = await fetch(`/api/GET?action=cropAdminComparison&username=${username}&countyState=${county}`);
       if (!res.ok) throw new Error('Failed to fetch admin comparison');
   
       const data = await res.json();
-      console.log("admin comparison data: ", data);
+      console.log("admin comparison data: ", data.result);
   
       if (res.ok) {
         const result = data.result;

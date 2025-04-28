@@ -151,6 +151,7 @@ const [avgEnvData, setAvgEnvData] = useState<any[]>([]);
     try {
       const climateRes = await fetch(`/api/GET?action=getClimateData&countyState=${encodeURIComponent(countyState)}&measurementDate=${encodeURIComponent(date)}`);
       const climateDataJson = await climateRes.json();
+      console.log("Climate data for selected county:", climateDataJson.result);
       setClimateData(climateDataJson.result || []);
     } catch (error) {
       console.error("Failed to fetch climate data:", error);

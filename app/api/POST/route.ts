@@ -87,17 +87,7 @@ export async function POST(req: NextRequest) {
         }
         return NextResponse.json({ success: true, message: 'Yield deleted successfully' });
       }
-      case 'cropAdvancedQuery': {
-        const {username} = params;
-        if (!username) {
-          return NextResponse.json({ success: false, error: 'Username is required' }, { status: 400 });
-        }
-        const result = await cropAdvancedQuery(username);
-        if (!result) {
-          return NextResponse.json({ success: false, error: 'Failed to fetch crop data' }, { status: 500 });
-        }
-        return NextResponse.json({ success: true, result: result });
-      }
+     
 
 
       default:

@@ -321,3 +321,35 @@ export const getAvgEnvData = async () => {
     throw err; // Re-throw the error to be handled upstream
   }
 }
+export const getAdminCropComparison = async (username: string, county_state: string) => {
+  try {
+    const sql = `
+    WITH UserAverage AS (
+        SELECT AVG(yieldacre) AS user_avg_yield
+        FROM CropYield
+        WHERE username = ?
+          AND county_state = ?
+    ),
+    AdminAverage AS (
+        SELECT AVG(yieldacre) AS admin_avg_yield
+        FROM CropYield
+        WHERE username = 'ADMINISTRATOR'
+          AND county_state = ?
+    )
+    SELECT 
+        ua.user_avg_yield, 
+        aa.admin_avg_yield
+    FROM UserAverage ua
+    CROSS JOIN AdminAverage aa;
+  `;  
+    const values = [username, county_state, county_state];
+    const rows = await query(sql, values);
+    console.log('Admin crop comparison:', rows);
+    return rows; // Return the result of the query
+  }
+  catch (err) {
+    console.error('Get admin crop comparison error:', err);
+    throw err; // Re-throw the error to be handled upstream
+  }
+
+}

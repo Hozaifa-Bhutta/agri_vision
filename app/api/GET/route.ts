@@ -10,6 +10,7 @@ import {
   checkUser,
   cropAdvancedQuery,
   getAvgEnvData,
+  getAdminCropComparison,
 } from '@/lib/db';
 import { fetchWeatherLast7Days } from '@/lib/weather';
 import {fetchFarmingNews} from '@/lib/farmingNews';
@@ -119,13 +120,25 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ success: true, result: result });
       }
       case 'getAvgEnvData': {
-        console.log('Fetching average environmental data');
         const result = await getAvgEnvData();
-        console.log('Average environmental data:', result);
         if (!result) {
           return NextResponse.json({ success: false, error: 'Failed to fetch average environmental data' }, { status: 500 });
         }
         return NextResponse.json({ success: true, result: result });
+      }
+      case 'cropAdminComparison' : {
+        const username = searchParams.get('username');
+        const countyState = searchParams.get('countyState');
+        console.log("username: ", username);
+        if (!username || !countyState) {
+          return NextResponse.json({ success: false, error: 'Username and county/state are required' }, { status: 400 });
+        }
+        console.log("about to call getAdminCropComparison");
+        const result = await getAdminCropComparison(username, countyState);
+        if (!result) {
+          return NextResponse.json({ success: false, error: 'Failed to fetch crop comparison data' }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, result: result[0] });
       }
 
 
