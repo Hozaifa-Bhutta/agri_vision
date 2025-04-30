@@ -1,0 +1,38 @@
+mysql 
+DELIMITER $$
+
+CREATE PROCEDURE GetCropComparison(
+    IN in_username VARCHAR(255),
+    IN in_county_state VARCHAR(255)
+)
+BEGIN
+    -- Corn averages
+    SELECT 
+        'corn' AS crop_type,
+        (SELECT AVG(yieldacre) 
+         FROM CropYield 
+         WHERE username = in_username
+           AND county_state = in_county_state 
+           AND crop_type = 'corn') AS user_avg_yield,
+        (SELECT AVG(yieldacre) 
+         FROM CropYield 
+         WHERE username = 'ADMINISTRATOR' 
+           AND county_state = in_county_state 
+           AND crop_type = 'corn') AS admin_avg_yield;
+
+    -- Soybeans averages
+    SELECT 
+        'soybeans' AS crop_type,
+        (SELECT AVG(yieldacre) 
+         FROM CropYield 
+         WHERE username = in_username
+           AND county_state = in_county_state 
+           AND crop_type = 'soybeans') AS user_avg_yield,
+        (SELECT AVG(yieldacre) 
+         FROM CropYield 
+         WHERE username = 'ADMINISTRATOR' 
+           AND county_state = in_county_state 
+           AND crop_type = 'soybeans') AS admin_avg_yield;
+END$$
+
+DELIMITER ;

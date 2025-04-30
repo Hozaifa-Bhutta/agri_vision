@@ -1,0 +1,84 @@
+DELIMITER //
+
+CREATE TRIGGER after_cropyield_insert
+AFTER INSERT ON CropYield
+FOR EACH ROW
+BEGIN
+    INSERT INTO CropYield_AuditLog (
+        action_type,
+        action_timestamp,
+        crop_type,
+        measurement_date,
+        county_state,
+        username,
+        yieldacre
+    )
+    VALUES (
+        'INSERT',
+        NOW(),
+        NEW.crop_type,
+        NEW.measurement_date,
+        NEW.county_state,
+        NEW.username,
+        NEW.yieldacre
+    );
+END//
+
+DELIMITER ;
+
+
+DELIMITER //
+
+CREATE TRIGGER after_cropyield_update
+AFTER UPDATE ON CropYield
+FOR EACH ROW
+BEGIN
+    INSERT INTO CropYield_AuditLog (
+        action_type,
+        action_timestamp,
+        crop_type,
+        measurement_date,
+        county_state,
+        username,
+        yieldacre
+    )
+    VALUES (
+        'UPDATE',
+        NOW(),
+        NEW.crop_type,
+        NEW.measurement_date,
+        NEW.county_state,
+        NEW.username,
+        NEW.yieldacre
+    );
+END//
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER after_cropyield_delete
+AFTER DELETE ON CropYield
+FOR EACH ROW
+BEGIN
+    INSERT INTO CropYield_AuditLog (
+        action_type,
+        action_timestamp,
+        crop_type,
+        measurement_date,
+        county_state,
+        username,
+        yieldacre
+    )
+    VALUES (
+        'DELETE',
+        NOW(),
+        OLD.crop_type,
+        OLD.measurement_date,
+        OLD.county_state,
+        OLD.username,
+        OLD.yieldacre
+    );
+END//
+
+DELIMITER ;

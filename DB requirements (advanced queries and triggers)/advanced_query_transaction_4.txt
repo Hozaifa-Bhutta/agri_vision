@@ -1,0 +1,45 @@
+export const cropAdvancedQuery = async (username: string) => {
+  // advanced query #1, this is in a transaction whose isolation level is REPEATABLE READ
+  // we set it to this isolation level to prevent phantom reads
+  const connection = await pool.getConnection(); // Get a connection from the pool
+  try {
+    await connection.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+    await connection.beginTransaction(); // Start the transaction
+
+    const sql = `
+      SELECT 
+          CY.username,
+          CY.county_state,
+          AVG(CY.yieldacre) AS avg_yield,
+          AR.avg_precipitation
+      FROM 
+          CropYield CY
+      JOIN (
+          SELECT 
+              county_state,
+              AVG(precipitation) AS avg_precipitation
+          FROM 
+              Climate
+          GROUP BY 
+              county_state
+      ) AR ON CY.county_state = AR.county_state
+      WHERE 
+          CY.username = ?
+      GROUP BY 
+          CY.username, CY.county_state, AR.avg_precipitation;
+    `;
+    const values = [username];
+    const [rows] = await connection.execute(sql, values);
+
+    console.log('Crop advanced query result:', rows);
+
+    await connection.commit(); // commit the transaction
+    return rows; // return the result of the query
+  } catch (err) {
+    await connection.rollback(); // rollback the transaction in case of an error
+    console.error('Crop advanced query error:', err);
+    throw err; 
+  } finally {
+    connection.release(); // release the connection
+  }
+};
